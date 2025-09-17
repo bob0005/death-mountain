@@ -26,6 +26,7 @@ export default function ItemTooltip({ itemSpecialsSeed, item, style }: ItemToolt
   // Calculate damage if there's a beast and this is an armor or weapon item
   let damage = null;
   let damageTaken = null;
+  let damageTakenCritical = null;
   let isNameMatch = false;
 
   if (beast) {
@@ -33,6 +34,7 @@ export default function ItemTooltip({ itemSpecialsSeed, item, style }: ItemToolt
 
     if (['Head', 'Chest', 'Foot', 'Hand', 'Waist'].includes(ItemUtils.getItemSlot(item.id))) {
       damageTaken = calculateBeastDamage(beast, adventurer!, item);
+      damageTakenCritical = calculateBeastDamage(beast, adventurer!, item, true);
     } else if (ItemUtils.isWeapon(item.id)) {
       damage = calculateAttackDamage(item, adventurer!, beast);
     }
@@ -101,6 +103,8 @@ export default function ItemTooltip({ itemSpecialsSeed, item, style }: ItemToolt
                 </Box>
               )}
               {damageTaken && `-${damageTaken} health when hit`}
+              <br/>
+              {damageTakenCritical && `-${damageTakenCritical} (${calculateLevel(adventurer?.xp || 0)}% critical hit chance)`}
             </Typography>
           </Box>
         </>

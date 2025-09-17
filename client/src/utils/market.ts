@@ -34,6 +34,10 @@ export function generateMarketItems(marketItemIds: number[], charisma: number): 
   return items;
 }
 
-export function potionPrice(level: number, charisma: number): number {
-  return Math.max(1, level - (charisma * 2));
+export function potionPrice(level: number, charisma: number, negative: boolean = false): number {
+  const price = level - (charisma * 2);
+  if (negative) {
+    return price;
+  }
+  return Math.max(1, price);
 }
