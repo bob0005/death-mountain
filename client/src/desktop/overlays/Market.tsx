@@ -377,13 +377,25 @@ export default function MarketOverlay() {
                       <Box sx={styles.potionControls}>
                         <Typography sx={styles.potionCost}>Cost: {potionCost} Gold</Typography>
                       </Box>
-                      <Slider
-                        value={cart.potions}
-                        onChange={(_, value) => handleBuyPotion(value as number)}
-                        min={0}
-                        max={maxPotions}
-                        sx={styles.potionSlider}
-                      />
+                        <Slider
+                          value={cart.potions}
+                          onChange={(_, value) => handleBuyPotion(value as number)}
+                          min={0}
+                          max={maxPotions}
+                          sx={styles.potionSlider}
+                        />
+
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Typography sx={styles.potionHelperText}>Current cost: {potionPrice(calculateLevel(adventurer?.xp || 0), adventurer?.stats?.charisma || 0, true)}</Typography>
+                          <Button
+                            variant="contained"
+                            color="inherit" 
+                            disabled={inProgress || remainingGold < 0}
+                            onClick={() => handleBuyPotion(maxPotions)}
+                            >
+                          <Typography sx={styles.potionHelperText}>Max</Typography> 
+                          </Button>
+                        </Box>
                     </Box>
                   </Box>
                 </Box>
