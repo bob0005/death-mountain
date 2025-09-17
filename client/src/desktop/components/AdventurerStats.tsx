@@ -105,7 +105,7 @@ export default function AdventurerStats() {
     } else if (stat === 'charisma') {
       return (
         <Box>
-          <Typography sx={styles.tooltipValue}>Potion cost: {potionPrice(level, currentValue)} Gold</Typography>
+          <Typography sx={styles.tooltipValue}>Potion cost: {potionPrice(level, currentValue)} Gold (current {potionPrice(level, currentValue, true)})</Typography>
           <Typography sx={styles.tooltipValue}>Item discount: {currentValue} Gold</Typography>
         </Box>
       );
