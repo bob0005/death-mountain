@@ -174,7 +174,7 @@ export const calculateBeastDamage = (beast: Beast, adventurer: Adventurer, armor
   let baseDamage = baseAttack;
   let critDamage = baseAttack;
 
-  if (armor) {
+  if (armor.id !== 0) {
     const armorLevel = calculateLevel(armor.xp);
     const armorValue = armorLevel * (6 - ItemUtils.getItemTier(armor.id));
 
