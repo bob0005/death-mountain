@@ -68,7 +68,7 @@ export default function EventsOverlay() {
     obstacleAmbushChance
   );
 
-  const discoveryChance = 33; // 33% chance of discovery encounter
+  const discoveryChance = 33;
 
   // Gold formula from contract: (rnd % adventurer_level) + 1
   // Range: 1 to adventurer_level, so average = (1 + adventurer_level) / 2
@@ -78,17 +78,13 @@ export default function EventsOverlay() {
   // Range: 2 to (adventurer_level * 2), so average = ((1 + adventurer_level) * 2) / 2 = (1 + adventurer_level)
   const avgHealthDiscovery = 1 + adventurerLevel;
 
-  // Gold and Health probabilities within discovery events
   const goldChanceInDiscovery = 45;
   const healthChanceInDiscovery = 45;
   const lootChanceInDiscovery = 10;
 
-  // Overall probabilities (33% discovery * chance within discovery)
   const overallGoldChance = (discoveryChance * goldChanceInDiscovery) / 100;
   const overallHealthChance = (discoveryChance * healthChanceInDiscovery) / 100;
   const overallLootChance = (discoveryChance * lootChanceInDiscovery) / 100;
-
-  // D
 
   return (
     <Box sx={styles.eventsContainer}>
