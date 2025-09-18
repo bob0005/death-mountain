@@ -5,6 +5,7 @@ import { preloadAssets } from "./assetLoader";
 import { getBeastImageById, getBeastName, getBeastTier, getBeastType } from "./beast";
 import { streamIds } from "./cloudflare";
 import { ItemUtils } from "./loot";
+import { calculateBeastDamage } from "./game";
 
 export interface GameEvent {
   type: 'adventurer' | 'bag' | 'beast' | 'discovery' | 'obstacle' | 'defeated_beast' | 'fled_beast' | 'stat_upgrade' |
@@ -335,4 +336,127 @@ export const getEventTitle = (event: GameEvent) => {
     default:
       return 'Unknown Event';
   }
+};
+
+export const calculateDeathProbabilityFromAmbush = (
+  adventurer: Adventurer,
+  adventurerLevel: number,
+  maxEncounterLevel: number,
+  ambushChance: number
+): {
+  totalDeathChance: number;
+  averageNonFatalDamage: number;
+  nonFatalEncounterChance: number;
+  breakdown: {
+    beastEncounterChance: number;
+    ambushChance: number;
+    deathChanceGivenAmbush: number;
+  };
+} => {
+  const beastEncounterChance = 33;
+  const beastTypes = ["Magic", "Blade", "Bludgeon"];
+  const armorSlots = ["head", "chest", "waist", "hand", "foot"] as const;
+  const criticalHitChance = adventurerLevel;
+
+  let totalDeathChance = 0;
+  let totalNonFatalDamage = 0;
+  let totalNonFatalProbability = 0;
+
+  for (let beastLevel = 1; beastLevel <= maxEncounterLevel; beastLevel++) {
+    const levelProbability = 1 / maxEncounterLevel;
+
+    beastTypes.forEach((beastType) => {
+      const typeProbability = 1 / 3;
+
+      [1, 2, 3, 4, 5].forEach((beastTier) => {
+        const tierProbability = 1 / 5;
+
+        armorSlots.forEach((slot) => {
+          const slotHitProbability = 1 / 5;
+          const armor = adventurer.equipment[slot];
+
+          const scenarioProbability =
+            levelProbability *
+            typeProbability *
+            tierProbability *
+            slotHitProbability;
+
+          const beast: Beast = {
+            id: 0,
+            seed: BigInt(0),
+            baseName: "",
+            name: "",
+            health: 1,
+            level: beastLevel,
+            type: beastType,
+            tier: beastTier,
+            specialPrefix: null,
+            specialSuffix: null,
+            isCollectable: false,
+          };
+
+          const normalDamage = calculateBeastDamage(
+            beast,
+            adventurer,
+            armor,
+            false
+          );
+          const criticalDamage = calculateBeastDamage(
+            beast,
+            adventurer,
+            armor,
+            true
+          );
+
+          const normalHitProbability = (100 - criticalHitChance) / 100;
+          const normalScenarioProbability =
+            scenarioProbability * normalHitProbability;
+
+          if (normalDamage >= adventurer.health) {
+            totalDeathChance += normalScenarioProbability;
+          } else {
+            totalNonFatalDamage += normalScenarioProbability * normalDamage;
+            totalNonFatalProbability += normalScenarioProbability;
+          }
+
+          const criticalHitProbability = criticalHitChance / 100;
+          const criticalScenarioProbability =
+            scenarioProbability * criticalHitProbability;
+
+          if (criticalDamage >= adventurer.health) {
+            totalDeathChance += criticalScenarioProbability;
+          } else {
+            totalNonFatalDamage += criticalScenarioProbability * criticalDamage;
+            totalNonFatalProbability += criticalScenarioProbability;
+          }
+        });
+      });
+    });
+  }
+
+  const deathChanceGivenAmbush = totalDeathChance * 100;
+  const averageNonFatalDamage =
+    ambushChance == 0
+      ? 0
+      : totalNonFatalProbability > 0
+      ? totalNonFatalDamage / totalNonFatalProbability
+      : 0;
+  const nonFatalEncounterChance = totalNonFatalProbability * 100;
+
+  const overallDeathChance =
+    (beastEncounterChance / 100) *
+    (ambushChance / 100) *
+    (deathChanceGivenAmbush / 100) *
+    100;
+
+  return {
+    totalDeathChance: overallDeathChance,
+    averageNonFatalDamage: Math.round(averageNonFatalDamage),
+    nonFatalEncounterChance: nonFatalEncounterChance,
+    breakdown: {
+      beastEncounterChance,
+      ambushChance,
+      deathChanceGivenAmbush,
+    },
+  };
 };

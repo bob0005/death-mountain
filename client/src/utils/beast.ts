@@ -270,3 +270,16 @@ export const getCollectableTraits = (seed: bigint) => {
     animated,
   };
 };
+
+export const getBeastLevelDifficultyBonus = (adventurer_level: number): number => {
+  if (adventurer_level >= 50) {
+    return 80;
+  } else if (adventurer_level >= 40) {
+    return 40;
+  } else if (adventurer_level >= 30) {
+    return 20;
+  } else if (adventurer_level >= 20) {
+    return 10;
+  }
+  return 0;
+};
