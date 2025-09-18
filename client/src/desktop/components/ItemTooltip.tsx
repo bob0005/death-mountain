@@ -103,8 +103,21 @@ export default function ItemTooltip({ itemSpecialsSeed, item, style }: ItemToolt
                 </Box>
               )}
               {damageTaken && `-${damageTaken} health when hit`}
-              <br/>
-              {damageTakenCritical && `-${damageTakenCritical} (${calculateLevel(adventurer?.xp || 0)}% critical hit chance)`}
+              <br />
+
+              {damageTakenCritical && (
+                <Box sx={styles.critDamageContainer}>
+                  <Typography sx={styles.critDamageText}>
+                    -{damageTakenCritical}{" "}
+                  </Typography>
+
+                  <Typography sx={styles.critDamageText}>
+                    ({calculateLevel(adventurer?.xp || 0)}%
+                  </Typography>
+
+                  <Typography>critical hit chance)</Typography>
+                </Box>
+              )}
             </Typography>
           </Box>
         </>
