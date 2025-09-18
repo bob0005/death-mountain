@@ -169,11 +169,11 @@ export const ability_based_damage_reduction = (adventurer_xp: number, relevant_s
   return Math.floor((100 * smooth / SCALE));
 }
 
-export const calculateBeastDamage = (beast: Beast, adventurer: Adventurer, armor: Item) => {
+export const calculateBeastDamage = (beast: Beast, adventurer: Adventurer, armor: Item, critical: boolean = false) => {
   const baseAttack = beast.level * (6 - Number(beast.tier));
   let damage = baseAttack;
 
-  if (armor) {
+  if (armor.id !== 0) {
     const armorLevel = calculateLevel(armor.xp);
     const armorValue = armorLevel * (6 - ItemUtils.getItemTier(armor.id));
 
@@ -181,6 +181,8 @@ export const calculateBeastDamage = (beast: Beast, adventurer: Adventurer, armor
     const beastAttackType = getAttackType(beast.id);
     const armorType = ItemUtils.getItemType(armor.id);
     damage = elementalAdjustedDamage(damage, beastAttackType, armorType);
+
+    const critical_hit_bonus = damage
 
     // Apply name match bonus
     if (beast.specialPrefix && beast.specialSuffix) {
@@ -191,6 +193,10 @@ export const calculateBeastDamage = (beast: Beast, adventurer: Adventurer, armor
       if (itemSpecials.prefix === beast.specialPrefix) {
         damage *= 8; // Prefix match
       }
+    }
+
+    if (critical) {
+      damage = damage + critical_hit_bonus;
     }
 
     damage = Math.max(BEAST_MIN_DAMAGE, damage - armorValue);
