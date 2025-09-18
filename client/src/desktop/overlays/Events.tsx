@@ -68,6 +68,28 @@ export default function EventsOverlay() {
     obstacleAmbushChance
   );
 
+  const discoveryChance = 33; // 33% chance of discovery encounter
+
+  // Gold formula from contract: (rnd % adventurer_level) + 1
+  // Range: 1 to adventurer_level, so average = (1 + adventurer_level) / 2
+  const avgGoldDiscovery = ((1 + adventurerLevel) / 2).toFixed(1);
+
+  // Health formula from contract: ((rnd % adventurer_level) + 1) * 2
+  // Range: 2 to (adventurer_level * 2), so average = ((1 + adventurer_level) * 2) / 2 = (1 + adventurer_level)
+  const avgHealthDiscovery = 1 + adventurerLevel;
+
+  // Gold and Health probabilities within discovery events
+  const goldChanceInDiscovery = 45;
+  const healthChanceInDiscovery = 45;
+  const lootChanceInDiscovery = 10;
+
+  // Overall probabilities (33% discovery * chance within discovery)
+  const overallGoldChance = (discoveryChance * goldChanceInDiscovery) / 100;
+  const overallHealthChance = (discoveryChance * healthChanceInDiscovery) / 100;
+  const overallLootChance = (discoveryChance * lootChanceInDiscovery) / 100;
+
+  // D
+
   return (
     <Box sx={styles.eventsContainer}>
       <Typography variant="h6" sx={styles.title}>
@@ -174,14 +196,55 @@ export default function EventsOverlay() {
         </Box>
       </Box>
 
-      {/* <Box sx={styles.eventBox}>
-                <Typography variant="subtitle1" sx={styles.eventTitle}>
-                    33% Discovery
-                </Typography>
-                <Typography variant="body2" sx={styles.eventSubtitle}>
-                    15% Gold • 15% Health • 3% Loot
-                </Typography>
-            </Box> */}
+      {/* DISCOVERY */}
+      <Box sx={styles.discoveryBox}>
+        <Typography variant="subtitle1" sx={styles.discoveryTitle}>
+          Discovery Rewards
+        </Typography>
+
+        <Box sx={styles.discoveryStats}>
+          <Box sx={styles.discoveryItem}>
+            <Typography variant="body2" sx={styles.discoveryLabel}>
+              Gold ({overallGoldChance.toFixed(1)}%)
+            </Typography>
+            <Typography variant="subtitle1" sx={styles.discoveryValue}>
+              ~{avgGoldDiscovery} gold
+            </Typography>
+          </Box>
+
+          <Box sx={styles.discoveryItem}>
+            <Typography variant="body2" sx={styles.discoveryLabel}>
+              Health ({overallHealthChance.toFixed(1)}%)
+            </Typography>
+            <Typography variant="subtitle1" sx={styles.discoveryValue}>
+              ~{avgHealthDiscovery} HP
+            </Typography>
+          </Box>
+
+          <Box sx={styles.discoveryItem}>
+            <Typography variant="body2" sx={styles.discoveryLabel}>
+              Loot ({overallLootChance.toFixed(1)}%)
+            </Typography>
+            <Box sx={styles.lootTiers}>
+              <Typography variant="caption" sx={styles.lootTier}>
+                T5: {(overallLootChance * 0.5).toFixed(1)}%
+              </Typography>
+              <Typography variant="caption" sx={styles.lootTier}>
+                T4: {(overallLootChance * 0.3).toFixed(1)}%
+              </Typography>
+              <Typography variant="caption" sx={styles.lootTier}>
+                T3: {(overallLootChance * 0.12).toFixed(1)}%
+              </Typography>
+              <Typography variant="caption" sx={styles.lootTier}>
+                T2: {(overallLootChance * 0.06).toFixed(1)}%
+              </Typography>
+              <Typography variant="caption" sx={styles.lootTier}>
+                T1: {(overallLootChance * 0.02).toFixed(1)}%
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
     </Box>
   );
 }
@@ -286,5 +349,54 @@ const styles = {
     color: "#b8b8b8",
     textAlign: "center",
     fontSize: "0.85rem",
+  },
+  discoveryBox: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "8px",
+    width: "90%",
+    border: "2px solid #4ecdc4",
+    borderRadius: "8px",
+    padding: "12px",
+    margin: "12px 12px 12px 12px",
+    background: "rgba(78, 205, 196, 0.1)",
+  },
+  discoveryTitle: {
+    color: "#4ecdc4",
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  discoveryStats: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "8px",
+    width: "100%",
+  },
+  discoveryItem: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+  },
+  discoveryLabel: {
+    color: "#b8b8b8",
+    fontSize: "0.9rem",
+  },
+  discoveryValue: {
+    fontWeight: "600",
+    fontSize: "1.1rem",
+    color: "#ffb347",
+  },
+  lootTiers: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: "8px",
+    justifyContent: "center",
+  },
+  lootTier: {
+    color: "#ffb347",
+    fontSize: "0.75rem",
   },
 };
