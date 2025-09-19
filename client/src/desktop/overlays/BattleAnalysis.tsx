@@ -1,23 +1,12 @@
 import { Box, Typography } from "@mui/material";
 import { useGameStore } from "@/stores/gameStore";
-import { calculateLevel } from "@/utils/game";
-import { ItemId } from "@/constants/loot";
 import { FleeSimulation } from "../components/FleeSimulation";
+import { BattleSimulation } from "../components/BattleSimulation";
 
 export default function BattleAnalysis() {
   const { adventurer, beast } = useGameStore();
 
   if (!adventurer || adventurer.xp === 0 || !beast) return null;
-
-  const beastPower = beast.level * (6 - beast.tier);
-  const goldReward =
-    adventurer.equipment.ring.id === ItemId.GoldRing
-      ? Math.floor(
-          Math.floor(beastPower / 2) *
-            0.03 *
-            calculateLevel(adventurer.equipment.ring.xp)
-        )
-      : Math.floor(beastPower / 2);
 
   return (
     <Box sx={styles.container}>
@@ -25,6 +14,7 @@ export default function BattleAnalysis() {
 
       <Box sx={styles.analysisContainer}>
         <FleeSimulation adventurer={adventurer} beast={beast} />
+        <BattleSimulation />
       </Box>
     </Box>
   );
