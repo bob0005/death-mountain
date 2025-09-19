@@ -76,6 +76,17 @@ function CharacterEquipment({ isDropMode, itemsToDrop, onItemClick, newItems, on
                         <Typography sx={styles.emptySlotTooltipDamageText}>
                           -{Math.floor((6 - beast.tier) * beast.level * 1.5)} health when hit
                         </Typography>
+                        <Box sx={styles.critDamageContainer}>
+                          <Typography sx={styles.critDamageText}>
+                            -{Math.floor((6 - beast.tier) * beast.level * 1.5) * 2}
+                          </Typography>
+
+                          <Typography sx={styles.critDamageText}>
+                            ({calculateLevel(adventurer?.xp || 0)}%
+                          </Typography>
+
+                          <Typography>critical hit chance)</Typography>
+                        </Box>
                       </Box>
                     </Box>
                   ) : (
@@ -803,5 +814,14 @@ const styles = {
   emptySlotTooltipDamageText: {
     color: '#ff4444',
     fontSize: '0.85rem',
+  },
+  critDamageContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '4px',
+    color: '#d7c529',
+  },
+  critDamageText: {
+    color: '#ff6b6b',
   },
 };

@@ -209,6 +209,11 @@ export const calculateBeastDamage = (beast: Beast, adventurer: Adventurer, armor
     }
   } else {
     damage = Math.floor(damage * 1.5);
+    const critical_hit_bonus = damage
+    
+    if (critical) {
+      damage = damage + critical_hit_bonus;
+    }
   }
 
   return Math.max(BEAST_MIN_DAMAGE, damage);

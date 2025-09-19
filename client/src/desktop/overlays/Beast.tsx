@@ -10,6 +10,7 @@ import ArmorTooltip from '../components/ArmorTooltip';
 import WeaponTooltip from '../components/WeaponTooltip';
 import { JACKPOT_AMOUNT, useStatistics } from '@/contexts/Statistics';
 import { JACKPOT_BEASTS } from '@/constants/beast';
+import BattleAnalysis from './BattleAnalysis';
 
 const pulseGold = keyframes`
   0% {
@@ -151,6 +152,12 @@ export default function Beast() {
           </Box>
         </Box>
       </Box>
+
+      {!!beast && (
+        <Box sx={styles.battleAnalysisContainer}>
+          <BattleAnalysis />
+        </Box>
+      )}
     </>
   );
 }
@@ -290,5 +297,13 @@ const styles = {
     textAlign: 'center',
     textShadow: '0 0 8px rgba(237, 207, 51, 0.3)',
     lineHeight: '1.1',
+  },
+  battleAnalysisContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '800px',
+    maxWidth: '90vw',
   },
 }; 
