@@ -922,4 +922,13 @@ const styles = {
     color: '#FFFFFF',
     textShadow: '0 1px 2px rgba(0, 0, 0, 0.9), 0 0 4px rgba(255, 255, 255, 0.3)',
   },
+  critDamageContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '4px',
+    color: '#d7c529',
+  },
+  critDamageText: {
+    color: '#ff6b6b',
+  },
 };

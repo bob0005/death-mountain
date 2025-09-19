@@ -8,6 +8,7 @@ import { Box, LinearProgress, Typography, keyframes } from '@mui/material';
 import { useEffect, useState } from 'react';
 import ArmorTooltip from '../components/ArmorTooltip';
 import WeaponTooltip from '../components/WeaponTooltip';
+import BattleAnalysis from './BattleAnalysis';
 
 export default function Beast() {
   const { currentNetworkConfig } = useDynamicConnector();
@@ -141,6 +142,12 @@ export default function Beast() {
           </Box>
         </Box>
       </Box>
+
+      {!!beast && (
+        <Box sx={styles.battleAnalysisContainer}>
+          <BattleAnalysis />
+        </Box>
+      )}
     </>
   );
 }
@@ -370,5 +377,13 @@ const styles = {
     backdropFilter: 'blur(8px)',
     zIndex: 1000,
     animation: `${elegantPulse} 2s infinite ease-in-out`,
+  },
+  battleAnalysisContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: '800px',
+    maxWidth: '90vw',
   },
 }; 
