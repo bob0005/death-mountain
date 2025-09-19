@@ -35,7 +35,7 @@ export const FleeSimulation = ({
   }, [adventurer?.equipment, adventurerState?.equipment]);
 
   const adventurerLevel = calculateLevel(adventurer.xp);
-  const beastCritChance = adventurerLevel / 100; // Convert to decimal
+  const beastCritChance = adventurerLevel / 100;
   const fleeChance = Math.min(
     (adventurer.stats.dexterity / adventurerLevel) * 100,
     100
@@ -74,7 +74,6 @@ export const FleeSimulation = ({
   const armorSlots = ["head", "chest", "waist", "hand", "foot"] as const;
   const armorGroups = new Map<string, DamageGroup>();
 
-  // Group armor by damage values
   armorSlots.forEach((slot) => {
     const armor = adventurer.equipment[slot];
     const normalDamage = calculateBeastDamage(beast, adventurer, armor, false);
@@ -94,14 +93,12 @@ export const FleeSimulation = ({
     armorGroups.get(key)!.slots.push(slot);
   });
 
-  // Calculate probabilities for each group
   armorGroups.forEach((group) => {
-    group.probability = group.slots.length / 5; // Each slot has 1/5 chance of being hit
+    group.probability = group.slots.length / 5;
   });
 
   console.log(armorGroups);
 
-  // Simulate the flee process iteratively
   const simulateFleeIterative = (
     startHealth: number,
     hasEquipmentChange: boolean = false
@@ -112,7 +109,6 @@ export const FleeSimulation = ({
     averageAttemptsToEscape: number;
     hitMaxAttempts: boolean;
   } => {
-    // Map: health -> probability of being at that health
     let currentStates = new Map<number, number>();
     currentStates.set(startHealth, 1.0);
 
@@ -125,7 +121,6 @@ export const FleeSimulation = ({
       const nextStates = new Map<number, number>();
 
       for (const [health, stateProbability] of currentStates) {
-        // Calculate flee success chance (0% on first attempt if equipment change)
         const fleeSuccessChance =
           hasEquipmentChange && attempt === 1 ? 0 : fleeChance / 100;
         const escapeProb = stateProbability * fleeSuccessChance;
@@ -136,12 +131,10 @@ export const FleeSimulation = ({
           weightedAttemptsOnEscape += escapeProb * attempt;
         }
 
-        // Calculate flee failure outcomes
         const failProb = stateProbability * (1 - fleeSuccessChance);
 
         if (failProb > 0) {
           armorGroups.forEach((group) => {
-            // Normal hit
             const normalHitProb =
               failProb * group.probability * (1 - beastCritChance);
             const healthAfterNormal = health - group.normalDamage;
@@ -149,12 +142,10 @@ export const FleeSimulation = ({
             if (healthAfterNormal <= 0) {
               totalDied += normalHitProb;
             } else {
-              // Add to next turn states
               const existing = nextStates.get(healthAfterNormal) || 0;
               nextStates.set(healthAfterNormal, existing + normalHitProb);
             }
 
-            // Critical hit
             const critHitProb = failProb * group.probability * beastCritChance;
             const healthAfterCrit = health - group.criticalDamage;
 
@@ -170,18 +161,15 @@ export const FleeSimulation = ({
 
       currentStates = nextStates;
 
-      // Early termination conditions
       const remainingProbability = Array.from(currentStates.values()).reduce(
         (a, b) => a + b,
         0
       );
 
-      // Stop if no states remain or probability is negligible
       if (currentStates.size === 0 || remainingProbability < 0.0001) {
         break;
       }
 
-      // Stop if we've resolved most outcomes (99.99% escaped or died)
       if (totalEscaped + totalDied > 0.9999) {
         console.log(
           `Flee simulation terminated early at attempt ${attempt}: resolved ${(
@@ -192,7 +180,6 @@ export const FleeSimulation = ({
         break;
       }
 
-      // For high flee chance scenarios, stop early if unlikely to continue much longer
       if (fleeChance >= 80 && attempt >= 10 && remainingProbability < 0.01) {
         console.log(
           `Flee simulation terminated early at attempt ${attempt}: high flee chance (${fleeChance.toFixed(
@@ -205,7 +192,6 @@ export const FleeSimulation = ({
       }
     }
 
-    // Handle remaining states as deaths (hit MAX_ATTEMPTS)
     const hitMaxAttempts = currentStates.size > 0;
     for (const [health, probability] of currentStates) {
       totalDied += probability;
