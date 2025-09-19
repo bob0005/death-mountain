@@ -296,6 +296,15 @@ const styles = {
   damageText: {
     color: '#d0c98d',
   },
+  critDamageContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '4px',
+    color: '#d7c529',
+  },
+  critDamageText: {
+    color: '#ff6b6b',
+  },
   nameMatchContainer: {
     display: 'flex',
     justifyContent: 'center',

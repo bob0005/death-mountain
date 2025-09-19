@@ -22,7 +22,7 @@ export default function EventsOverlay() {
       health: Math.min(
         adventurer.health + vitalityHealthBonus + cart.potions * 10,
         STARTING_HEALTH +
-          (selectedStats.vitality || 0 + adventurer.stats.vitality) * 15
+          (adventurer.stats.vitality + selectedStats.vitality || 0 ) * 15
       ),
       stats: {
         ...adventurer.stats,
