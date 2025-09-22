@@ -5,7 +5,7 @@ import { useGameDirector } from '@/desktop/contexts/GameDirector';
 import { useGameStore } from '@/stores/gameStore';
 import { Item } from '@/types/game';
 import { calculateAttackDamage, calculateBeastDamage, calculateCombatStats, calculateLevel } from '@/utils/game';
-import { ItemUtils, Tier } from '@/utils/loot';
+import { ItemUtils, Tier, ItemType } from '@/utils/loot';
 import { keyframes } from '@emotion/react';
 import { DeleteOutline, Star } from '@mui/icons-material';
 import { Box, Button, Tooltip, Typography } from '@mui/material';
@@ -228,15 +228,75 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
   const combatStats = beast ? calculateCombatStats(adventurer!, bag, beast) : null;
   const bestItemIds = combatStats?.bestItems.map((item: Item) => item.id) || [];
 
-  return (
-    <Box sx={styles.bagPanel}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-        <Typography variant="h6">Bag ({bag?.length || 0}/{15})</Typography>
-        <Typography variant="h6" color="secondary">{adventurer?.gold || 0} gold</Typography>
-      </Box>
+  // Categorize items by type
+  const categorizeItems = () => {
+    const categories = {
+      cloth: [] as Item[], // Cloth armor + Magic weapons + Amulets
+      hide: [] as Item[],  // Hide armor + Blade weapons + Pendants  
+      metal: [] as Item[], // Metal armor + Bludgeon weapons + Necklaces
+      rings: [] as Item[]  // All rings
+    };
 
-      <Box sx={styles.bagGrid}>
-        {bag?.map((item) => {
+    bag?.forEach((item) => {
+      const itemType = ItemUtils.getItemType(item.id);
+      
+      // Handle rings separately
+      if (itemType === ItemType.Ring) {
+        categories.rings.push(item);
+        return;
+      }
+      
+      // Special handling for neck items first
+      if (itemType === ItemType.Necklace) {
+        switch (item.id) {
+          case 1: // Pendant (hide armor defense)
+            categories.hide.push(item);
+            break;
+          case 2: // Necklace (metal armor defense)
+            categories.metal.push(item);
+            break;
+          case 3: // Amulet (cloth armor defense)
+            categories.cloth.push(item);
+            break;
+          default:
+            categories.cloth.push(item); // fallback
+        }
+        return;
+      }
+      
+      // Categorize other items based on type
+      switch (itemType) {
+        case ItemType.Cloth:
+        case ItemType.Magic:
+          categories.cloth.push(item);
+          break;
+        case ItemType.Hide:
+        case ItemType.Blade:
+          categories.hide.push(item);
+          break;
+        case ItemType.Metal:
+        case ItemType.Bludgeon:
+          categories.metal.push(item);
+          break;
+        default:
+          // Fallback
+          categories.cloth.push(item);
+          break;
+      }
+    });
+
+    return categories;
+  };
+
+  const categorizedItems = categorizeItems();
+
+  const renderItemsSection = (items: Item[], title: string, titleColor: string) => (
+    <Box sx={styles.categorySection}>
+      <Typography variant="caption" sx={{ ...styles.categoryTitle, color: titleColor }}>
+        {title} ({items.length})
+      </Typography>
+      <Box sx={styles.categoryGrid}>
+        {items.map((item) => {
           const metadata = ItemUtils.getMetadata(item.id);
           const isSelected = itemsToDrop.includes(item.id);
           const highlight = isDropMode && itemsToDrop.length === 0;
@@ -348,20 +408,33 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
             </Tooltip>
           );
         })}
-        {Array(15 - (bag?.length || 0)).fill(null).map((_, idx) => (
-          <Box key={`empty-${idx}`} sx={styles.bagSlot}>
-            <Box sx={styles.emptySlot}></Box>
-          </Box>
-        ))}
-        {(!isDropMode && !beast) && (
-          <Box
-            sx={styles.dropButtonSlot}
-            onClick={onDropModeToggle}
-          >
-            <DeleteOutline sx={styles.dropIcon} />
-            <Typography sx={styles.dropText}>drop</Typography>
-          </Box>
-        )}
+      </Box>
+    </Box>
+  );
+
+  return (
+    <Box sx={styles.bagPanel}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+        <Typography variant="h6">Bag ({bag?.length || 0}/{15})</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {!beast && (
+            <Box
+              sx={[styles.dropButtonTop, ...(isDropMode ? [styles.dropButtonTopActive] : [])]}
+              onClick={onDropModeToggle}
+            >
+              <DeleteOutline sx={styles.dropIcon} />
+              <Typography sx={styles.dropText}>{isDropMode ? 'cancel' : 'drop'}</Typography>
+            </Box>
+          )}
+          <Typography variant="h6" color="secondary">{adventurer?.gold || 0} gold</Typography>
+        </Box>
+      </Box>
+
+      <Box sx={styles.categorizedBagContainer}>
+        {renderItemsSection(categorizedItems.cloth, "Cloth & Magic", "#8FBC8F")}
+        {renderItemsSection(categorizedItems.hide, "Hide & Blade", "#D2691E")}
+        {renderItemsSection(categorizedItems.metal, "Metal & Bludgeon", "#C0C0C0")}
+        {renderItemsSection(categorizedItems.rings, "Rings", "#FFD700")}
       </Box>
     </Box>
   );
@@ -459,7 +532,7 @@ export default function InventoryOverlay({ disabledEquip }: InventoryOverlayProp
               isDropMode={isDropMode}
               itemsToDrop={itemsToDrop}
               onItemClick={handleItemClick}
-              onDropModeToggle={() => setIsDropMode(true)}
+              onDropModeToggle={() => setIsDropMode(!isDropMode)}
               newItems={newItems}
               onItemHover={handleItemHover}
             />
@@ -672,6 +745,33 @@ const styles = {
     flexWrap: 'wrap',
     gap: 0.5,
   },
+  categorizedBagContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    maxHeight: '400px',
+    overflowY: 'auto',
+  },
+  categorySection: {
+    border: '1px solid rgba(255, 255, 255, 0.1)',
+    borderRadius: '6px',
+    padding: '8px',
+    background: 'rgba(0, 0, 0, 0.2)',
+  },
+  categoryTitle: {
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    marginBottom: '4px',
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+  categoryGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: 0.5,
+    justifyContent: 'flex-start',
+  },
   bagSlot: {
     width: 38,
     height: 38,
@@ -705,6 +805,28 @@ const styles = {
     transition: 'all 0.2s ease',
     '&:hover': {
       background: 'rgba(255, 0, 0, 0.2)',
+    },
+  },
+  dropButtonTop: {
+    background: 'rgba(255, 0, 0, 0.1)',
+    border: '2px solid rgba(255, 0, 0, 0.2)',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    padding: '4px 8px',
+    gap: 1,
+    '&:hover': {
+      background: 'rgba(255, 0, 0, 0.2)',
+    },
+  },
+  dropButtonTopActive: {
+    background: 'rgba(255, 0, 0, 0.3)',
+    border: '2px solid rgba(255, 0, 0, 0.5)',
+    '&:hover': {
+      background: 'rgba(255, 0, 0, 0.4)',
     },
   },
   dropIcon: {
