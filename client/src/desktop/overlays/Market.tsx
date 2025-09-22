@@ -463,8 +463,7 @@ export default function MarketOverlay() {
                   const isOwned = isItemOwned(item.id);
                   const shouldGrayOut = (!canAfford && !isOwned && !inCart) || isOwned;
                   const futureSpecials =
-                    adventurer?.item_specials_seed !== 0 &&
-                    calculateLevel(adventurer?.xp || 0) < 15
+                    adventurer?.item_specials_seed !== 0
                       ? ItemUtils.getSpecials(
                           item.id,
                           15,
