@@ -3,7 +3,7 @@ import { useController } from '@/contexts/controller';
 import { useGameStore } from '@/stores/gameStore';
 import { useMarketStore } from '@/stores/marketStore';
 import { CombatStats } from '@/types/game';
-import { calculateLevel, calculateProgress } from '@/utils/game';
+import { calculateLevel, calculateNextLevelXP, calculateProgress } from '@/utils/game';
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 
@@ -133,11 +133,14 @@ export default function Adventurer({ combatStats }: { combatStats?: CombatStats 
                   value={adventurer?.stat_upgrades_available! > 0 ? 100 : calculateProgress(adventurer?.xp || 1)}
                   sx={styles.xpBar}
                 />
-                <Typography
-                  variant="body2"
-                  sx={styles.xpOverlayText}
-                >
-                  {adventurer?.stat_upgrades_available! > 0 ? 'LEVEL UP' : 'XP'}
+                <Typography variant="body2" sx={styles.xpOverlayText}>
+                  {adventurer?.xp || 1} /{" "}
+                  {calculateNextLevelXP(
+                    calculateLevel(adventurer?.xp || 1),
+                    false
+                  )}
+                  {" "}
+                  {adventurer?.stat_upgrades_available! > 0 ? "LEVEL UP" : "XP"}
                 </Typography>
               </>
             )}
