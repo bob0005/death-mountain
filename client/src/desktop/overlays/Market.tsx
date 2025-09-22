@@ -462,6 +462,16 @@ export default function MarketOverlay() {
                   const inCart = cart.items.some(cartItem => cartItem.id === item.id);
                   const isOwned = isItemOwned(item.id);
                   const shouldGrayOut = (!canAfford && !isOwned && !inCart) || isOwned;
+                  const futureSpecials =
+                    adventurer?.item_specials_seed !== 0 &&
+                    calculateLevel(adventurer?.xp || 0) < 15
+                      ? ItemUtils.getSpecials(
+                          item.id,
+                          15,
+                          adventurer!.item_specials_seed
+                        )
+                      : null;
+
                   return (
                     <Box
                       key={item.id}
@@ -511,6 +521,12 @@ export default function MarketOverlay() {
                             </Typography>
                           </Box>
                         </Box>
+
+                        {futureSpecials && futureSpecials.special1 && (
+                          <Typography sx={styles.futureSpecial}>
+                            {ItemUtils.getStatBonus(futureSpecials.special1)}
+                          </Typography>
+                        )}
 
                         <Box sx={styles.itemFooter}>
                           <Typography sx={styles.itemPrice}>
@@ -1020,5 +1036,10 @@ const styles = {
   },
   itemUnaffordable: {
     opacity: 0.5,
+  },
+  futureSpecial: {
+    color: '#808080',
+    fontSize: '0.8rem',
+    opacity: 0.8,
   },
 };
