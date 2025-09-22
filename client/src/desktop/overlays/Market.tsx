@@ -83,6 +83,7 @@ export default function MarketOverlay() {
   } = useMarketStore();
 
   const [showCart, setShowCart] = useState(false);
+  const isMarketDisabled = (adventurer && adventurer?.stat_upgrades_available !== 0) || false;
 
   const handleOpen = () => {
     setIsOpen(!isOpen);
@@ -383,6 +384,7 @@ export default function MarketOverlay() {
                           min={0}
                           max={maxPotions}
                           sx={styles.potionSlider}
+                          disabled={isMarketDisabled}
                         />
 
                         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -390,7 +392,7 @@ export default function MarketOverlay() {
                           <Button
                             variant="contained"
                             color="inherit" 
-                            disabled={inProgress || remainingGold < 0}
+                            disabled={inProgress || remainingGold < 0 || isMarketDisabled}
                             onClick={() => handleBuyPotion(maxPotions)}
                             >
                           <Typography sx={styles.potionHelperText}>Max</Typography> 
@@ -523,7 +525,7 @@ export default function MarketOverlay() {
                             <Button
                               variant="outlined"
                               onClick={() => inCart ? handleRemoveItem(item) : handleBuyItem(item)}
-                              disabled={!inCart && (remainingGold < item.price || isItemOwned(item.id) || inventoryFull)}
+                              disabled={!inCart && (remainingGold < item.price || isItemOwned(item.id) || inventoryFull || isMarketDisabled)}
                               sx={{
                                 height: '32px',
                                 ...(inCart && {
