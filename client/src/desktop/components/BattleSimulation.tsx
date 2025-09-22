@@ -334,9 +334,9 @@ export const BattleSimulation = () => {
           <Typography sx={styles.goldValue}>
             {adventurer.equipment.ring.id === ItemId.GoldRing
               ? Math.floor(
-                  Math.floor(beastPower / 2) *
+                  Math.floor(beastPower / 2) + (Math.floor(beastPower / 2) *
                     0.03 *
-                    calculateLevel(adventurer.equipment.ring.xp)
+                    calculateLevel(adventurer.equipment.ring.xp))
                 )
               : Math.floor(beastPower / 2)}
           </Typography>
