@@ -378,6 +378,8 @@ export default function MarketOverlay() {
                       <Box sx={styles.potionControls}>
                         <Typography sx={styles.potionCost}>Cost: {potionCost} Gold</Typography>
                       </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, mt: 1 }}>
                         <Slider
                           value={cart.potions}
                           onChange={(_, value) => handleBuyPotion(value as number)}
@@ -387,17 +389,24 @@ export default function MarketOverlay() {
                           disabled={isMarketDisabled}
                         />
 
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <Typography sx={styles.potionHelperText}>Current cost: {potionPrice(calculateLevel(adventurer?.xp || 0), adventurer?.stats?.charisma || 0, true)}</Typography>
-                          <Button
-                            variant="contained"
-                            color="inherit" 
-                            disabled={inProgress || remainingGold < 0 || isMarketDisabled}
-                            onClick={() => handleBuyPotion(maxPotions)}
-                            >
-                          <Typography sx={styles.potionHelperText}>Max</Typography> 
-                          </Button>
-                        </Box>
+                        <Button
+                          variant="outlined"
+                          color="inherit"
+                          disabled={
+                            inProgress || remainingGold < 0 || isMarketDisabled
+                          }
+                          onClick={() => handleBuyPotion(maxPotions)}
+                          sx={{ justifyContent: "center", height: "32px" }}
+                          size="small"
+                        >
+                          <Typography
+                            sx={{ color: "#d0c98d", fontSize: "0.7rem" }}
+                          >
+                            Max
+                          </Typography>
+                        </Button>
+                      </Box>
+
                     </Box>
                   </Box>
                 </Box>
