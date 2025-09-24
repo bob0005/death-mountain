@@ -13,7 +13,7 @@ import MarketOverlay from './Market';
 import TipsOverlay from './Tips';
 import SettingsOverlay from './Settings';
 import { useUIStore } from '@/stores/uiStore';
-import EventsOverlay from './Events';
+import ExplorationRiskAnalysisOverlay from './ExplorationRiskAnalysis';
 import { useSnackbar } from 'notistack';
 
 export default function ExploreOverlay() {
@@ -160,7 +160,7 @@ export default function ExploreOverlay() {
         </Box>
       </Box>
 
-      <EventsOverlay />
+      <ExplorationRiskAnalysisOverlay />
 
       <InventoryOverlay disabledEquip={isExploring || isSelectingStats || inProgress} />
       <TipsOverlay />

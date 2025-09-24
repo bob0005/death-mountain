@@ -49,8 +49,9 @@ export const BattleSimulation = () => {
 
   ARMOR_SLOTS.forEach((slot) => {
     const armor = adventurer.equipment[slot];
-    const normalDamage = calculateBeastDamage(beast, adventurer, armor, false);
-    const criticalDamage = calculateBeastDamage(beast, adventurer, armor, true);
+    const beastDamage = calculateBeastDamage(beast, adventurer, armor);
+    const normalDamage = beastDamage.baseDamage;
+    const criticalDamage = beastDamage.criticalDamage;
 
     const key = `${normalDamage}-${criticalDamage}`;
 
@@ -247,7 +248,7 @@ export const BattleSimulation = () => {
 
     // Handle remaining states as deaths (hit MAX_ATTEMPTS)
     const hitMaxAttempts = currentStates.size > 0;
-    for (const [stateKey, probability] of currentStates) {
+    for (const [, probability] of currentStates) {
       totalDeaths += probability;
     }
 

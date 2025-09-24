@@ -1,90 +1,53 @@
-import { Stats } from "@/types/game";
-import { ability_based_percentage, calculateLevel } from "@/utils/game";
-import { getBeastLevelDifficultyBonus } from "@/utils/beast";
 import { Box, Typography, LinearProgress } from "@mui/material";
 import { useGameStore } from "@/stores/gameStore";
 import { useMemo } from "react";
 import { useMarketStore } from "@/stores/marketStore";
 import { STARTING_HEALTH } from "@/constants/game";
-import { calculateDeathProbabilityFromAmbush } from "@/utils/events";
+import {
+  addStats,
+  calculateAmbushRisk,
+  calculateObstacleRisk,
+} from "@/utils/explorationRiskAnalysis";
+import { calculateLevel } from "@/utils/game";
 
-export default function EventsOverlay() {
+const DISCOVERY_PROBABILITY = 33;
+const GOLD_PROBABILITY = (DISCOVERY_PROBABILITY * 45) / 100;
+const HEALTH_PROBABILITY = (DISCOVERY_PROBABILITY * 45) / 100;
+const LOOT_PROBABILITY = (DISCOVERY_PROBABILITY * 10) / 100;
+
+export default function ExplorationRiskAnalysisOverlay() {
   const { adventurer, selectedStats } = useGameStore();
   const { cart } = useMarketStore();
 
-  const tempAdventurer = useMemo(() => {
+  const updatedAdventurer = useMemo(() => {
     if (!adventurer) return null;
 
-    const vitalityHealthBonus = (selectedStats.vitality || 0) * 15;
+    const healthFromPotions = cart.potions * 10;
+    const maxHealth =
+      STARTING_HEALTH +
+      (adventurer.stats.vitality + selectedStats.vitality) * 15;
+
+    const updatedHealth = Math.min(
+      adventurer.health + healthFromPotions + selectedStats.vitality * 15,
+      maxHealth
+    );
 
     return {
       ...adventurer,
-      health: Math.min(
-        adventurer.health + vitalityHealthBonus + cart.potions * 10,
-        STARTING_HEALTH +
-          (adventurer.stats.vitality + selectedStats.vitality || 0 ) * 15
-      ),
-      stats: {
-        ...adventurer.stats,
-        ...Object.entries(selectedStats).reduce((acc, [stat, value]) => {
-          acc[stat as keyof Stats] = (adventurer.stats[stat as keyof Stats] +
-            value) as Partial<Stats>[keyof Stats];
-          return acc;
-        }, {} as Partial<Stats>),
-      },
+      health: updatedHealth,
+      stats: addStats(adventurer.stats, selectedStats),
+      // beast_health: ,
+      // stat_upgrades_available: ,
+      // equipment: {} ,
     };
-  }, [adventurer, selectedStats, cart.potions]);
+  }, [adventurer, cart.potions, selectedStats]);
 
-  if (!tempAdventurer) return null;
+  if (!updatedAdventurer) return null;
 
-  const adventurerLevel = calculateLevel(tempAdventurer.xp);
-  const maxEncounterLevel =
-    1 +
-    (adventurerLevel * 3 - 1) +
-    getBeastLevelDifficultyBonus(adventurerLevel);
+  const adventurerLvl = calculateLevel(updatedAdventurer.xp);
 
-  const evasionChance = ability_based_percentage(
-    tempAdventurer.xp,
-    tempAdventurer.stats.wisdom
-  );
-  const obstacleChance = ability_based_percentage(
-    tempAdventurer.xp,
-    tempAdventurer.stats.intelligence
-  );
-  const ambushChance = 100 - evasionChance;
-  const obstacleAmbushChance = 100 - obstacleChance;
-
-  const beastResult = calculateDeathProbabilityFromAmbush(
-    tempAdventurer,
-    adventurerLevel,
-    maxEncounterLevel,
-    ambushChance
-  );
-
-  const obstacleResult = calculateDeathProbabilityFromAmbush(
-    tempAdventurer,
-    adventurerLevel,
-    maxEncounterLevel,
-    obstacleAmbushChance
-  );
-
-  const discoveryChance = 33;
-
-  // Gold formula from contract: (rnd % adventurer_level) + 1
-  // Range: 1 to adventurer_level, so average = (1 + adventurer_level) / 2
-  const avgGoldDiscovery = ((1 + adventurerLevel) / 2).toFixed(1);
-
-  // Health formula from contract: ((rnd % adventurer_level) + 1) * 2
-  // Range: 2 to (adventurer_level * 2), so average = ((1 + adventurer_level) * 2) / 2 = (1 + adventurer_level)
-  const avgHealthDiscovery = 1 + adventurerLevel;
-
-  const goldChanceInDiscovery = 45;
-  const healthChanceInDiscovery = 45;
-  const lootChanceInDiscovery = 10;
-
-  const overallGoldChance = (discoveryChance * goldChanceInDiscovery) / 100;
-  const overallHealthChance = (discoveryChance * healthChanceInDiscovery) / 100;
-  const overallLootChance = (discoveryChance * lootChanceInDiscovery) / 100;
+  const ambushResult = calculateAmbushRisk(updatedAdventurer);
+  const obstacleResult = calculateObstacleRisk(updatedAdventurer);
 
   return (
     <Box sx={styles.eventsContainer}>
@@ -103,27 +66,27 @@ export default function EventsOverlay() {
             sx={{
               ...styles.deathPercentage,
               color:
-                beastResult.totalDeathChance > 10
+                ambushResult.instantDeathProbability > 10
                   ? "#ff6b6b"
-                  : beastResult.totalDeathChance > 5
+                  : ambushResult.instantDeathProbability > 5
                   ? "#ffd93d"
                   : "#4ecdc4",
             }}
           >
-            {beastResult.totalDeathChance.toFixed(2)}%
+            {ambushResult.instantDeathProbability.toFixed(2)}%
           </Typography>
         </Box>
 
         <LinearProgress
           variant="determinate"
-          value={Math.min(beastResult.totalDeathChance, 100)}
+          value={Math.min(ambushResult.instantDeathProbability, 100)}
           sx={{
             ...styles.progressBar,
             "& .MuiLinearProgress-bar": {
               backgroundColor:
-                beastResult.totalDeathChance > 10
+                ambushResult.instantDeathProbability > 10
                   ? "#ff6b6b"
-                  : beastResult.totalDeathChance > 5
+                  : ambushResult.instantDeathProbability > 5
                   ? "#ffd93d"
                   : "#4ecdc4",
             },
@@ -137,7 +100,7 @@ export default function EventsOverlay() {
             Avg Non-Fatal Damage:
           </Typography>
           <Typography variant="subtitle1" sx={styles.avgDamage}>
-            {beastResult.averageNonFatalDamage} HP
+            {ambushResult.avgNonFatalDamage} HP
           </Typography>
         </Box>
       </Box>
@@ -153,27 +116,27 @@ export default function EventsOverlay() {
             sx={{
               ...styles.deathPercentage,
               color:
-                obstacleResult.totalDeathChance > 10
+                obstacleResult.instantDeathProbability > 10
                   ? "#ff6b6b"
-                  : obstacleResult.totalDeathChance > 5
+                  : obstacleResult.instantDeathProbability > 5
                   ? "#ffd93d"
                   : "#4ecdc4",
             }}
           >
-            {obstacleResult.totalDeathChance.toFixed(2)}%
+            {obstacleResult.instantDeathProbability.toFixed(2)}%
           </Typography>
         </Box>
 
         <LinearProgress
           variant="determinate"
-          value={Math.min(obstacleResult.totalDeathChance, 100)}
+          value={Math.min(obstacleResult.instantDeathProbability, 100)}
           sx={{
             ...styles.progressBar,
             "& .MuiLinearProgress-bar": {
               backgroundColor:
-                obstacleResult.totalDeathChance > 10
+                obstacleResult.instantDeathProbability > 10
                   ? "#ff6b6b"
-                  : obstacleResult.totalDeathChance > 5
+                  : obstacleResult.instantDeathProbability > 5
                   ? "#ffd93d"
                   : "#4ecdc4",
             },
@@ -187,7 +150,7 @@ export default function EventsOverlay() {
             Avg Non-Fatal Damage:
           </Typography>
           <Typography variant="subtitle1" sx={styles.avgDamage}>
-            {obstacleResult.averageNonFatalDamage} HP
+            {obstacleResult.avgNonFatalDamage} HP
           </Typography>
         </Box>
       </Box>
@@ -201,41 +164,41 @@ export default function EventsOverlay() {
         <Box sx={styles.discoveryStats}>
           <Box sx={styles.discoveryItem}>
             <Typography variant="body2" sx={styles.discoveryLabel}>
-              Gold ({overallGoldChance.toFixed(1)}%)
+              Gold ({GOLD_PROBABILITY.toFixed(1)}%)
             </Typography>
             <Typography variant="subtitle1" sx={styles.discoveryValue}>
-              ~{avgGoldDiscovery} gold
+              ~{(1 + adventurerLvl) / 2} gold
             </Typography>
           </Box>
 
           <Box sx={styles.discoveryItem}>
             <Typography variant="body2" sx={styles.discoveryLabel}>
-              Health ({overallHealthChance.toFixed(1)}%)
+              Health ({HEALTH_PROBABILITY.toFixed(1)}%)
             </Typography>
             <Typography variant="subtitle1" sx={styles.discoveryValue}>
-              ~{avgHealthDiscovery} HP
+              ~{1 + adventurerLvl} HP
             </Typography>
           </Box>
 
           <Box sx={styles.discoveryItem}>
             <Typography variant="body2" sx={styles.discoveryLabel}>
-              Loot ({overallLootChance.toFixed(1)}%)
+              Loot ({LOOT_PROBABILITY.toFixed(1)}%)
             </Typography>
             <Box sx={styles.lootTiers}>
               <Typography variant="caption" sx={styles.lootTier}>
-                T5: {(overallLootChance * 0.5).toFixed(1)}%
+                T5: {(LOOT_PROBABILITY * 0.5).toFixed(1)}%
               </Typography>
               <Typography variant="caption" sx={styles.lootTier}>
-                T4: {(overallLootChance * 0.3).toFixed(1)}%
+                T4: {(LOOT_PROBABILITY * 0.3).toFixed(1)}%
               </Typography>
               <Typography variant="caption" sx={styles.lootTier}>
-                T3: {(overallLootChance * 0.12).toFixed(1)}%
+                T3: {(LOOT_PROBABILITY * 0.12).toFixed(1)}%
               </Typography>
               <Typography variant="caption" sx={styles.lootTier}>
-                T2: {(overallLootChance * 0.06).toFixed(1)}%
+                T2: {(LOOT_PROBABILITY * 0.06).toFixed(1)}%
               </Typography>
               <Typography variant="caption" sx={styles.lootTier}>
-                T1: {(overallLootChance * 0.02).toFixed(1)}%
+                T1: {(LOOT_PROBABILITY * 0.02).toFixed(1)}%
               </Typography>
             </Box>
           </Box>
@@ -321,30 +284,6 @@ const styles = {
     height: "8px",
     borderRadius: "4px",
     backgroundColor: "rgba(255, 255, 255, 0.1)",
-  },
-  eventBox: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    width: "100%",
-    border: "1px solid #083e22",
-    borderRadius: "8px",
-    padding: "12px",
-    background: "rgba(24, 40, 24, 0.8)",
-    backdropFilter: "blur(4px)",
-    minHeight: "80px",
-  },
-  eventTitle: {
-    color: "#ffd93d",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  eventSubtitle: {
-    color: "#b8b8b8",
-    textAlign: "center",
-    fontSize: "0.85rem",
   },
   discoveryBox: {
     display: "flex",

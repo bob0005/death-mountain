@@ -76,8 +76,9 @@ export const FleeSimulation = ({
 
   armorSlots.forEach((slot) => {
     const armor = adventurer.equipment[slot];
-    const normalDamage = calculateBeastDamage(beast, adventurer, armor, false);
-    const criticalDamage = calculateBeastDamage(beast, adventurer, armor, true);
+    const beastDamage = calculateBeastDamage(beast, adventurer, armor);
+    const normalDamage = beastDamage.baseDamage;
+    const criticalDamage = beastDamage.criticalDamage;
 
     const key = `${normalDamage}-${criticalDamage}`;
 
