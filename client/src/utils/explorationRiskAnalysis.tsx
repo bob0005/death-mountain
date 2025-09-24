@@ -284,8 +284,23 @@ function createBeast(
   specialPrefix: string | null,
   specialSuffix: string | null
 ): Beast {
+  let beastId: number;
+  switch (type) {
+    case "Magic":
+      beastId = 1; // Any ID 0-25 works, using 1
+      break;
+    case "Hunter":
+      beastId = 26; // Any ID 26-50 works, using 26 (first Blade ID)
+      break;
+    case "Brute":
+      beastId = 51; // Any ID 51-75 works, using 51 (first Bludgeon ID)
+      break;
+    default:
+      beastId = 0;
+  }
+
   return {
-    id: 0,
+    id: beastId,
     seed: BigInt(0),
     baseName: "",
     name: "",
