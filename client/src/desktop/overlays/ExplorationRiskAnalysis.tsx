@@ -1,4 +1,4 @@
-import { Box, Typography, LinearProgress } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useGameStore } from "@/stores/gameStore";
 import { useMemo } from "react";
 import { useMarketStore } from "@/stores/marketStore";
@@ -10,7 +10,7 @@ import {
 } from "@/utils/explorationRiskAnalysis";
 import { calculateLevel } from "@/utils/game";
 
-const DISCOVERY_PROBABILITY = 33;
+const DISCOVERY_PROBABILITY = 33.3;
 const GOLD_PROBABILITY = (DISCOVERY_PROBABILITY * 45) / 100;
 const HEALTH_PROBABILITY = (DISCOVERY_PROBABILITY * 45) / 100;
 const LOOT_PROBABILITY = (DISCOVERY_PROBABILITY * 10) / 100;
@@ -36,9 +36,6 @@ export default function ExplorationRiskAnalysisOverlay() {
       ...adventurer,
       health: updatedHealth,
       stats: addStats(adventurer.stats, selectedStats),
-      // beast_health: ,
-      // stat_upgrades_available: ,
-      // equipment: {} ,
     };
   }, [adventurer, cart.potions, selectedStats]);
 
@@ -49,109 +46,115 @@ export default function ExplorationRiskAnalysisOverlay() {
   const ambushResult = calculateAmbushRisk(updatedAdventurer);
   const obstacleResult = calculateObstacleRisk(updatedAdventurer);
 
+  const cumulativeDeathProbability =
+    ambushResult.instantDeathProbability +
+    obstacleResult.instantDeathProbability;
+  const cumulativeAvgDamage =
+    (ambushResult.avgNonFatalDamage + obstacleResult.avgNonFatalDamage) / 2;
+
   return (
-    <Box sx={styles.eventsContainer}>
+    <Box sx={styles.container}>
       <Typography variant="h6" sx={styles.title}>
         Exploration Risk Analysis
       </Typography>
 
-      {/* AMBUSH */}
-      <Box sx={styles.deathProbabilityBox}>
-        <Typography variant="subtitle1" sx={styles.deathTitle}>
-          Ambush Death Risk
-        </Typography>
-        <Box sx={styles.deathStats}>
+      <Box sx={styles.riskSection}>
+        <Box sx={styles.riskRow}>
+          <Box sx={styles.riskItem}>
+            <Typography variant="body2" sx={styles.riskLabel}>
+              Ambush
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                ...styles.riskPercentage,
+                color:
+                  ambushResult.instantDeathProbability > 10
+                    ? "#ff6b6b"
+                    : ambushResult.instantDeathProbability > 5
+                    ? "#ffd93d"
+                    : "#4ecdc4",
+              }}
+            >
+              {ambushResult.instantDeathProbability.toFixed(1)}%
+            </Typography>
+          </Box>
+
+          <Box sx={styles.riskItem}>
+            <Typography variant="body2" sx={styles.riskLabel}>
+              Obstacle
+            </Typography>
+            <Typography
+              variant="h5"
+              sx={{
+                ...styles.riskPercentage,
+                color:
+                  obstacleResult.instantDeathProbability > 10
+                    ? "#ff6b6b"
+                    : obstacleResult.instantDeathProbability > 5
+                    ? "#ffd93d"
+                    : "#4ecdc4",
+              }}
+            >
+              {obstacleResult.instantDeathProbability.toFixed(1)}%
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* AVG DAMAGE BELOW */}
+        <Box sx={styles.avgDamageRow}>
+          <Box sx={styles.avgDamageItem}>
+            <Typography variant="caption" sx={styles.avgDamageLabel}>
+              Avg Dmg:
+            </Typography>
+            <Typography variant="body2" sx={styles.avgDamageValue}>
+              {ambushResult.avgNonFatalDamage} HP
+            </Typography>
+          </Box>
+
+          <Box sx={styles.avgDamageItem}>
+            <Typography variant="caption" sx={styles.avgDamageLabel}>
+              Avg Dmg:
+            </Typography>
+            <Typography variant="body2" sx={styles.avgDamageValue}>
+              {obstacleResult.avgNonFatalDamage} HP
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={styles.cumulativeBox}>
+          <Typography variant="body2" sx={styles.riskLabel}>
+            Total Death Risk:
+          </Typography>
           <Typography
             variant="h4"
             sx={{
-              ...styles.deathPercentage,
+              ...styles.cumulativePercentage,
               color:
-                ambushResult.instantDeathProbability > 10
+                cumulativeDeathProbability > 20
                   ? "#ff6b6b"
-                  : ambushResult.instantDeathProbability > 5
+                  : cumulativeDeathProbability > 10
                   ? "#ffd93d"
                   : "#4ecdc4",
             }}
           >
-            {ambushResult.instantDeathProbability.toFixed(2)}%
+            {cumulativeDeathProbability.toFixed(1)}%
           </Typography>
-        </Box>
-
-        <LinearProgress
-          variant="determinate"
-          value={Math.min(ambushResult.instantDeathProbability, 100)}
-          sx={{
-            ...styles.progressBar,
-            "& .MuiLinearProgress-bar": {
-              backgroundColor:
-                ambushResult.instantDeathProbability > 10
-                  ? "#ff6b6b"
-                  : ambushResult.instantDeathProbability > 5
-                  ? "#ffd93d"
-                  : "#4ecdc4",
-            },
-          }}
-        />
-        <Box sx={styles.avgDamageBox}>
-          <Typography
-            variant="subtitle1"
-            sx={{ ...styles.deathTitle, color: "#e0e0e0", fontSize: "0.9rem" }}
-          >
-            Avg Non-Fatal Damage:
-          </Typography>
-          <Typography variant="subtitle1" sx={styles.avgDamage}>
-            {ambushResult.avgNonFatalDamage} HP
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* OBSTACLE */}
-      <Box sx={styles.deathProbabilityBox}>
-        <Typography variant="subtitle1" sx={styles.deathTitle}>
-          Obstacle Death Risk
-        </Typography>
-        <Box sx={styles.deathStats}>
-          <Typography
-            variant="h4"
+          <Box
             sx={{
-              ...styles.deathPercentage,
-              color:
-                obstacleResult.instantDeathProbability > 10
-                  ? "#ff6b6b"
-                  : obstacleResult.instantDeathProbability > 5
-                  ? "#ffd93d"
-                  : "#4ecdc4",
+              ...styles.avgDamageItem,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: "8px",
             }}
           >
-            {obstacleResult.instantDeathProbability.toFixed(2)}%
-          </Typography>
-        </Box>
-
-        <LinearProgress
-          variant="determinate"
-          value={Math.min(obstacleResult.instantDeathProbability, 100)}
-          sx={{
-            ...styles.progressBar,
-            "& .MuiLinearProgress-bar": {
-              backgroundColor:
-                obstacleResult.instantDeathProbability > 10
-                  ? "#ff6b6b"
-                  : obstacleResult.instantDeathProbability > 5
-                  ? "#ffd93d"
-                  : "#4ecdc4",
-            },
-          }}
-        />
-        <Box sx={styles.avgDamageBox}>
-          <Typography
-            variant="subtitle1"
-            sx={{ ...styles.deathTitle, color: "#e0e0e0", fontSize: "0.9rem" }}
-          >
-            Avg Non-Fatal Damage:
-          </Typography>
-          <Typography variant="subtitle1" sx={styles.avgDamage}>
-            {obstacleResult.avgNonFatalDamage} HP
-          </Typography>
+            <Typography variant="caption" sx={styles.avgDamageLabel}>
+              Avg Damage:
+            </Typography>
+            <Typography variant="body2" sx={styles.cumulativeDamage}>
+              {cumulativeAvgDamage.toFixed(1)} HP
+            </Typography>
+          </Box>
         </Box>
       </Box>
 
@@ -184,23 +187,9 @@ export default function ExplorationRiskAnalysisOverlay() {
             <Typography variant="body2" sx={styles.discoveryLabel}>
               Loot ({LOOT_PROBABILITY.toFixed(1)}%)
             </Typography>
-            <Box sx={styles.lootTiers}>
-              <Typography variant="caption" sx={styles.lootTier}>
-                T5: {(LOOT_PROBABILITY * 0.5).toFixed(1)}%
-              </Typography>
-              <Typography variant="caption" sx={styles.lootTier}>
-                T4: {(LOOT_PROBABILITY * 0.3).toFixed(1)}%
-              </Typography>
-              <Typography variant="caption" sx={styles.lootTier}>
-                T3: {(LOOT_PROBABILITY * 0.12).toFixed(1)}%
-              </Typography>
-              <Typography variant="caption" sx={styles.lootTier}>
-                T2: {(LOOT_PROBABILITY * 0.06).toFixed(1)}%
-              </Typography>
-              <Typography variant="caption" sx={styles.lootTier}>
-                T1: {(LOOT_PROBABILITY * 0.02).toFixed(1)}%
-              </Typography>
-            </Box>
+            <Typography variant="subtitle1" sx={styles.discoveryValue}>
+              T1-T5 items
+            </Typography>
           </Box>
         </Box>
       </Box>
@@ -209,26 +198,22 @@ export default function ExplorationRiskAnalysisOverlay() {
 }
 
 const styles = {
-  eventsContainer: {
+  container: {
     position: "absolute",
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-
     gap: "12px",
     padding: "16px 16px",
     border: "2px solid #083e22",
     borderRadius: "12px",
-
     background: "rgba(24, 40, 24, 0.95)",
     backdropFilter: "blur(8px)",
-
-    width: "380px",
+    width: "300px",
     maxHeight: "85vh",
   },
   title: {
@@ -236,7 +221,7 @@ const styles = {
     fontWeight: "bold",
     marginBottom: "8px",
   },
-  deathProbabilityBox: {
+  riskSection: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -244,47 +229,78 @@ const styles = {
     width: "90%",
     border: "2px solid #ff6b6b",
     borderRadius: "8px",
-    padding: "12px",
-    margin: "12px 12px 12px 12px",
+    padding: "10px",
     background: "rgba(255, 107, 107, 0.1)",
   },
-  deathTitle: {
-    color: "#ff6b6b",
-    fontWeight: "bold",
-    textAlign: "center",
+  riskRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+    gap: "16px",
   },
-  deathStats: {
+  riskItem: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: "4px",
+    flex: 1,
   },
-  deathPercentage: {
+  riskLabel: {
+    color: "#ff6b6b",
     fontWeight: "bold",
-    fontSize: "2.5rem",
+    fontSize: "0.9rem",
   },
-  avgDamageBox: {
+  riskPercentage: {
+    fontWeight: "bold",
+    fontSize: "1.8rem",
+  },
+  avgDamageRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    width: "100%",
+    gap: "16px",
+    marginTop: "4px",
+  },
+  avgDamageItem: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
     gap: "8px",
-    marginTop: "8px",
-    padding: "8px",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: "6px",
+    flex: 1,
   },
-  avgDamage: {
+  avgDamageLabel: {
+    color: "#e0e0e0",
+    fontSize: "0.75rem",
+  },
+  avgDamageValue: {
     fontWeight: "600",
-    fontSize: "1.1rem",
+    fontSize: "0.9rem",
     color: "#ffb347",
   },
-  progressBar: {
+  cumulativeBox: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "4px",
+    marginTop: "8px",
+    padding: "8px",
+    borderRadius: "6px",
     width: "100%",
-    height: "8px",
-    borderRadius: "4px",
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
   },
+  cumulativePercentage: {
+    fontWeight: "bold",
+    fontSize: "2rem",
+  },
+  cumulativeDamage: {
+    color: "#ffb347",
+    fontSize: "0.9rem",
+    fontWeight: "600",
+  },
+
   discoveryBox: {
     display: "flex",
     flexDirection: "column",
@@ -294,7 +310,6 @@ const styles = {
     border: "2px solid #4ecdc4",
     borderRadius: "8px",
     padding: "12px",
-    margin: "12px 12px 12px 12px",
     background: "rgba(78, 205, 196, 0.1)",
   },
   discoveryTitle: {
@@ -323,15 +338,5 @@ const styles = {
     fontWeight: "600",
     fontSize: "1.1rem",
     color: "#ffb347",
-  },
-  lootTiers: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "8px",
-    justifyContent: "center",
-  },
-  lootTier: {
-    color: "#ffb347",
-    fontSize: "0.75rem",
   },
 };
