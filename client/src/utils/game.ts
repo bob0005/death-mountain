@@ -3,6 +3,7 @@ import { MIN_DAMAGE } from "@/constants/game";
 import { Adventurer, Beast, CombatStats, Equipment, Item } from "@/types/game";
 import { getArmorType, getAttackType } from "./beast";
 import { ItemType, ItemUtils } from "./loot";
+import { getXpReward } from "./processFutures";
 
 export const calculateLevel = (xp: number) => {
   if (xp === 0) return 1;
@@ -355,4 +356,29 @@ export const calculateGoldReward = (beast: Beast, ring: Item | null) => {
   }
 
   return goldReward;
+};
+
+export const calculateItemLevelUp = (
+  item: Item,
+  beast: Beast | null,
+  adventurer: Adventurer | null
+) => {
+  if (!beast || !adventurer)
+    return { willLevelUp: false, newLevel: 0, currentLevel: 0 };
+
+  const currentLevel = calculateLevel(item.xp);
+  const adventurerLevel = calculateLevel(adventurer.xp);
+
+  const adventurerXpReward = Number(
+    getXpReward(BigInt(beast.level), BigInt(beast.tier), adventurerLevel)
+  );
+  const itemXpReward = adventurerXpReward * 2;
+
+  const nextLevelXp = calculateNextLevelXP(currentLevel, true);
+  const willLevelUp = item.xp + itemXpReward >= nextLevelXp;
+  const newLevel = willLevelUp
+    ? calculateLevel(item.xp + itemXpReward)
+    : currentLevel;
+
+  return { willLevelUp, newLevel, currentLevel };
 };

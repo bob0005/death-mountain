@@ -480,19 +480,19 @@ function getAttackLocation(entropy: bigint): string {
   return "Unknown";
 }
 
-function getXpReward(
+export function getXpReward(
   level: bigint,
   tier: bigint,
   adventurerLevel: number
 ): bigint {
-  let xp = ((BigInt(6) - tier) * level) / BigInt(2);
-  let adusted_xp = (xp * BigInt(100 - Math.min(adventurerLevel * 2, 95))) / BigInt(100);
+  const xp = ((BigInt(6) - tier) * level) / BigInt(2);
+  const adjusted_xp = (xp * BigInt(100 - Math.min(adventurerLevel * 2, 95))) / BigInt(100);
 
-  if (adusted_xp < BigInt(4)) {
+  if (adjusted_xp < BigInt(4)) {
     return BigInt(4);
   }
 
-  return adusted_xp;
+  return adjusted_xp;
 }
 
 function abilityBasedAvoidThreat(level: bigint, entropy: bigint): bigint {

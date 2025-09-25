@@ -4,7 +4,7 @@ import ItemTooltip from '@/desktop/components/ItemTooltip';
 import { useGameDirector } from '@/desktop/contexts/GameDirector';
 import { useGameStore } from '@/stores/gameStore';
 import { Item } from '@/types/game';
-import { calculateAttackDamage, calculateBeastDamage, calculateCombatStats, calculateLevel } from '@/utils/game';
+import { calculateAttackDamage, calculateBeastDamage, calculateCombatStats, calculateLevel, calculateItemLevelUp } from '@/utils/game';
 import { ItemUtils, Tier, ItemType } from '@/utils/loot';
 import { keyframes } from '@emotion/react';
 import { DeleteOutline, Star } from '@mui/icons-material';
@@ -78,6 +78,11 @@ function CharacterEquipment({ isDropMode, itemsToDrop, onItemClick, newItems, on
               }
             }
           }
+
+          const levelUpInfo =
+            item?.id && beast && adventurer
+              ? calculateItemLevelUp(item, beast, adventurer)
+              : { willLevelUp: false, newLevel: 0, currentLevel: 0 };
 
           return (
             <Tooltip
@@ -182,6 +187,13 @@ function CharacterEquipment({ isDropMode, itemsToDrop, onItemClick, newItems, on
                           isArmorSlot ? styles.damageIndicatorTextRed : styles.damageIndicatorTextGreen
                         ]}>
                           {isArmorSlot ? `-${damageTaken}` : `+${damage}`}
+                        </Typography>
+                      </Box>
+                    )}
+                    {levelUpInfo.willLevelUp && (
+                      <Box sx={styles.levelUpIndicator}>
+                        <Typography sx={styles.levelUpIndicatorText}>
+                          ↑{levelUpInfo.newLevel}
                         </Typography>
                       </Box>
                     )}
@@ -319,6 +331,8 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
             }
           }
 
+          const levelUpInfo = calculateItemLevelUp(item, beast, adventurer);
+
           if (isNew && isWeaponSlot && [Tier.T1, Tier.T2, Tier.T3].includes(tier) && ItemUtils.getItemTier(adventurer?.equipment.weapon.id!) === Tier.T5) {
             onItemClick(item);
           }
@@ -395,6 +409,13 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
                         isArmorSlot ? styles.damageIndicatorTextRed : styles.damageIndicatorTextGreen
                       ]}>
                         {isArmorSlot ? `-${damageTaken}` : `+${damage}`}
+                      </Typography>
+                    </Box>
+                  )}
+                  {levelUpInfo.willLevelUp && (
+                    <Box sx={styles.levelUpIndicator}>
+                      <Typography sx={styles.levelUpIndicatorText}>
+                        ↑{levelUpInfo.newLevel}
                       </Typography>
                     </Box>
                   )}
@@ -1047,5 +1068,30 @@ const styles = {
   },
   critDamageText: {
     color: '#ff6b6b',
+  },
+  levelUpIndicator: {
+    position: 'absolute',
+    bottom: '1px',
+    left: '1px',
+    minWidth: '16px',
+    height: '14px',
+    borderRadius: '2px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 15,
+    background: 'linear-gradient(135deg, rgba(138, 43, 226, 0.9) 0%, rgba(75, 0, 130, 0.9) 100%)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.5), 0 0 6px rgba(138, 43, 226, 0.4)',
+    backdropFilter: 'blur(1px)',
+  },
+  levelUpIndicatorText: {
+    fontSize: '0.7rem',
+    fontWeight: 'bold',
+    fontFamily: 'VT323, monospace',
+    color: '#FFFFFF',
+    textShadow: '0 1px 2px rgba(0, 0, 0, 0.8)',
+    lineHeight: 1,
+    letterSpacing: '0.2px',
   },
 };

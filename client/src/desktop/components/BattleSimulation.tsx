@@ -3,11 +3,13 @@ import {
   calculateAttackDamage,
   calculateBeastDamage,
   calculateLevel,
+  calculateNextLevelXP,
   getNewItemsEquipped,
 } from "@/utils/game";
 import { useGameStore } from "@/stores/gameStore";
 import { ItemId } from "@/constants/loot";
 import { useMemo } from "react";
+import { getXpReward } from "@/utils/processFutures";
 
 const ARMOR_SLOTS = ["head", "chest", "waist", "foot", "hand"] as const;
 
@@ -43,6 +45,18 @@ export const BattleSimulation = () => {
     adventurer,
     beast
   );
+
+  const beastPower = beast.level * (6 - beast.tier);
+  const adventurerXpReward = Number(
+    getXpReward(BigInt(beast.level), BigInt(beast.tier), adventurerLevel)
+  );
+
+  const currentLevel = calculateLevel(adventurer.xp);
+  const nextLevelXp = calculateNextLevelXP(currentLevel);
+  const willLevelUp = adventurer.xp + adventurerXpReward >= nextLevelXp;
+  const newLevel = willLevelUp
+    ? calculateLevel(adventurer.xp + adventurerXpReward)
+    : currentLevel;
 
   const armorGroups = new Map<string, DamageGroup>();
 
@@ -249,7 +263,6 @@ export const BattleSimulation = () => {
     currentBeastHealth,
     hasEquipmentChange
   );
-  const beastPower = beast.level * (6 - beast.tier);
 
   return (
     <Box sx={styles.container}>
@@ -307,6 +320,18 @@ export const BattleSimulation = () => {
           <Typography sx={styles.statLabel}>Avg Attempts:</Typography>
           <Typography sx={styles.statValue}>
             {simulationResult.averageAttemptsToWin.toFixed(1)}
+          </Typography>
+        </Box>
+
+        <Box sx={styles.statItem}>
+          <Typography sx={styles.statLabel}>XP Reward:</Typography>
+          <Typography sx={styles.xpValue}>
+            +{adventurerXpReward} XP
+            {willLevelUp && (
+              <Typography component="span" sx={styles.levelUpNote}>
+                {` → Level ${newLevel}!`}
+              </Typography>
+            )}
           </Typography>
         </Box>
 
@@ -380,6 +405,13 @@ const styles = {
     flex: "0 0 auto",
     textAlign: "right",
   },
+  xpValue: {
+    fontWeight: "600",
+    fontSize: "0.9rem",
+    color: "#4caf50",
+    flex: "0 0 auto",
+    textAlign: "right",
+  },
   goldValue: {
     fontWeight: "600",
     fontSize: "0.9rem",
@@ -398,5 +430,11 @@ const styles = {
     color: "#888",
     fontSize: "0.75rem",
     fontStyle: "italic",
+  },
+  levelUpNote: {
+    color: "#4caf50",
+    fontSize: "0.75rem",
+    fontWeight: "bold",
+    marginLeft: "4px",
   },
 };
