@@ -1,12 +1,8 @@
 import { ItemId } from "@/constants/loot";
 import { useGameStore } from "@/stores/gameStore";
-import { ItemUtils } from "@/utils/loot";
+import { ItemUtils, slotIcons } from "@/utils/loot";
 import { Box, Typography } from "@mui/material";
 import { useMemo } from "react";
-
-interface ArmorStatsPreviewProps {
-  isOpen: boolean;
-}
 
 interface ArmorSetStats {
   cloth: { [slot: string]: string };
@@ -14,7 +10,7 @@ interface ArmorSetStats {
   metal: { [slot: string]: string };
 }
 
-export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
+export default function ArmorStatsPreview({ isOpen }: { isOpen: boolean }) {
   const { adventurer } = useGameStore();
 
   const armorStats = useMemo(() => {
@@ -31,7 +27,7 @@ export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
       metal: {},
     };
 
-    const sampleArmor = {
+    const tier1Armor = {
       cloth: {
         Head: ItemId.Crown,
         Chest: ItemId.DivineRobe,
@@ -55,7 +51,7 @@ export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
       },
     };
 
-    Object.entries(sampleArmor).forEach(([armorType, slots]) => {
+    Object.entries(tier1Armor).forEach(([armorType, slots]) => {
       Object.entries(slots).forEach(([slot, itemId]) => {
         const specials = ItemUtils.getSpecials(
           itemId,
@@ -77,8 +73,6 @@ export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
   const armorTotals = useMemo(() => {
     if (!armorStats) return null;
 
-    console.log(armorStats);
-
     const totals = {
       cloth: { STR: 0, DEX: 0, VIT: 0, INT: 0, WIS: 0, CHA: 0 },
       hide: { STR: 0, DEX: 0, VIT: 0, INT: 0, WIS: 0, CHA: 0 },
@@ -86,12 +80,12 @@ export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
     };
 
     Object.entries(armorStats).forEach(([armorType, slots]) => {
-      Object.values(slots).forEach((statString) => {
+      Object.values(slots).forEach((statString: string) => {
         const statMatches = statString.match(
           /\+(\d+)\s+(STR|DEX|VIT|INT|WIS|CHA)/g
         );
         if (statMatches) {
-          statMatches.forEach((match) => {
+          statMatches.forEach((match: string) => {
             const [, value, stat] = match.match(
               /\+(\d+)\s+(STR|DEX|VIT|INT|WIS|CHA)/
             )!;
@@ -118,11 +112,18 @@ export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
     return null;
   }
 
-  const formatTotal = (total: { [key: string]: number }) => {
-    return Object.entries(total)
-      .filter(([, value]) => value > 0)
-      .map(([stat, value]) => `+${value} ${stat}`)
-      .join(" ");
+  const formatStatBonus = (statString: string) => {
+    const statMatches = statString.match(
+      /\+(\d+)\s+(STR|DEX|VIT|INT|WIS|CHA)/g
+    );
+    if (!statMatches) return [];
+
+    return statMatches.map((match) => {
+      const [, value, stat] = match.match(
+        /\+(\d+)\s+(STR|DEX|VIT|INT|WIS|CHA)/
+      )!;
+      return { value: parseInt(value), stat };
+    });
   };
 
   return (
@@ -149,19 +150,52 @@ export default function ArmorStatsPreview({ isOpen }: ArmorStatsPreviewProps) {
             </Box>
 
             <Box sx={styles.slotsContainer}>
-              {Object.entries(armorStats[armorType]).map(([slot, stats]) => (
-                <Box key={slot} sx={styles.slotRow}>
-                  <Typography sx={styles.slotName}>{slot}:</Typography>
-                  <Typography sx={styles.slotStats}>{stats}</Typography>
-                </Box>
-              ))}
+              {Object.entries(armorStats[armorType]).map(([slot, stats]) => {
+                const statBonuses = formatStatBonus(stats);
+
+                return (
+                  <Box key={slot} sx={styles.slotRow}>
+                    <Box sx={styles.slotIconContainer}>
+                      <Box
+                        component="img"
+                        src={slotIcons[slot as keyof typeof slotIcons]}
+                        alt={slot}
+                        sx={styles.slotIcon}
+                      />
+                    </Box>
+                    <Box sx={styles.statsContainer}>
+                      {statBonuses.map((bonus, index) => (
+                        <Box key={index} sx={styles.statBonusItem}>
+                          <Typography sx={styles.statValue}>
+                            +{bonus.value}
+                          </Typography>
+                          <Typography sx={styles.statName}>
+                            {bonus.stat}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                );
+              })}
             </Box>
 
             {armorTotals && (
               <Box sx={styles.totalRow}>
-                <Typography sx={styles.totalStats}>
-                  {formatTotal(armorTotals[armorType]) || "No bonuses"}
-                </Typography>
+                <Box sx={styles.totalStatsContainer}>
+                  {Object.entries(armorTotals[armorType]).map(
+                    ([stat, value]) => (
+                      <Box key={stat} sx={styles.totalStatItem}>
+                        <Typography sx={styles.totalStatValue}>
+                          +{value}
+                        </Typography>
+                        <Typography sx={styles.totalStatName}>
+                          {stat}
+                        </Typography>
+                      </Box>
+                    )
+                  )}
+                </Box>
               </Box>
             )}
           </Box>
@@ -190,71 +224,119 @@ const styles = {
   armorGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(3, 1fr)",
-    gap: "10px",
+    gap: "6px",
   },
   armorColumn: {
     background: "rgba(20, 20, 20, 0.6)",
     borderRadius: "4px",
     border: "1px solid rgba(215, 197, 41, 0.2)",
-    padding: "10px",
+    padding: "6px",
     display: "flex",
     flexDirection: "column",
-    minHeight: "140px",
+    minHeight: "160px",
   },
   armorTypeHeader: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "6px",
+    gap: "4px",
     marginBottom: "8px",
     paddingBottom: "4px",
     borderBottom: "1px solid rgba(215, 197, 41, 0.2)",
   },
   typeIcon: {
-    width: "16px",
-    height: "16px",
+    width: "14px",
+    height: "14px",
     filter:
       "invert(0.85) sepia(0.3) saturate(1.5) hue-rotate(5deg) brightness(0.8)",
   },
   armorTypeName: {
     color: "#d7c529",
-    fontSize: "0.8rem",
+    fontSize: "0.75rem",
     fontWeight: "600",
     textTransform: "uppercase",
   },
   slotsContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: "3px",
+    gap: "4px",
     flex: 1,
   },
   slotRow: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
+    gap: "6px",
     padding: "1px 0",
   },
-  slotName: {
-    color: "#d0c98d",
-    fontSize: "0.7rem",
-    minWidth: "38px",
-    textAlign: "left",
-    textTransform: "uppercase",
+  slotIconContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: "20px",
+    width: "20px",
+    height: "20px",
+    flexShrink: 0,
   },
-  slotStats: {
+  slotIcon: {
+    width: "14px",
+    height: "14px",
+    filter:
+      "invert(0.85) sepia(0.3) saturate(1.5) hue-rotate(5deg) brightness(0.8)",
+    opacity: 0.9,
+  },
+  statsContainer: {
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+    alignItems: "flex-end",
+    gap: "1px",
+  },
+  statBonusItem: {
+    display: "grid",
+    gridTemplateColumns: "18px 1fr",
+    gap: "3px",
+    alignItems: "baseline",
+    width: "100%",
+  },
+  statValue: {
     color: "#ffffff",
     fontSize: "0.7rem",
     fontWeight: "500",
+    lineHeight: 1.2,
     textAlign: "right",
-    flex: 1,
+  },
+  statName: {
+    color: "#ffffff",
+    fontSize: "0.7rem",
+    fontWeight: "500",
+    lineHeight: 1.2,
   },
   totalRow: {
-    marginTop: "auto",
-    paddingTop: "6px",
+    marginTop: "4px",
+    paddingTop: "8px",
     borderTop: "1px solid rgba(215, 197, 41, 0.3)",
-    textAlign: "center",
   },
-  totalStats: {
+  totalStatsContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gap: "3px 6px",
+  },
+  totalStatItem: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: "2px",
+    justifyContent: "center",
+  },
+  totalStatValue: {
+    color: "#d7c529",
+    fontSize: "0.75rem",
+    fontWeight: "bold",
+    lineHeight: 1.2,
+    minWidth: "20px",
+    textAlign: "right",
+  },
+  totalStatName: {
     color: "#d7c529",
     fontSize: "0.75rem",
     fontWeight: "bold",
