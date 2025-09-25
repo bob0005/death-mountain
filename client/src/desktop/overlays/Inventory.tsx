@@ -228,43 +228,39 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
   const combatStats = beast ? calculateCombatStats(adventurer!, bag, beast) : null;
   const bestItemIds = combatStats?.bestItems.map((item: Item) => item.id) || [];
 
-  // Categorize items by type
   const categorizeItems = () => {
     const categories = {
       cloth: [] as Item[], // Cloth armor + Magic weapons + Amulets
       hide: [] as Item[],  // Hide armor + Blade weapons + Pendants  
       metal: [] as Item[], // Metal armor + Bludgeon weapons + Necklaces
-      rings: [] as Item[]  // All rings
+      rings: [] as Item[]
     };
 
     bag?.forEach((item) => {
       const itemType = ItemUtils.getItemType(item.id);
       
-      // Handle rings separately
       if (itemType === ItemType.Ring) {
         categories.rings.push(item);
         return;
       }
       
-      // Special handling for neck items first
       if (itemType === ItemType.Necklace) {
         switch (item.id) {
-          case 1: // Pendant (hide armor defense)
+          case 1:
             categories.hide.push(item);
             break;
-          case 2: // Necklace (metal armor defense)
+          case 2:
             categories.metal.push(item);
             break;
-          case 3: // Amulet (cloth armor defense)
+          case 3:
             categories.cloth.push(item);
             break;
           default:
-            categories.cloth.push(item); // fallback
+            categories.cloth.push(item);
         }
         return;
       }
       
-      // Categorize other items based on type
       switch (itemType) {
         case ItemType.Cloth:
         case ItemType.Magic:
@@ -279,7 +275,6 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
           categories.metal.push(item);
           break;
         default:
-          // Fallback
           categories.cloth.push(item);
           break;
       }
@@ -417,6 +412,7 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
         <Typography variant="h6">Bag ({bag?.length || 0}/{15})</Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Typography variant="h6" color="secondary">{adventurer?.gold || 0} gold</Typography>
           {!beast && (
             <Box
               sx={[styles.dropButtonTop, ...(isDropMode ? [styles.dropButtonTopActive] : [])]}
@@ -426,7 +422,6 @@ function InventoryBag({ isDropMode, itemsToDrop, onItemClick, onDropModeToggle, 
               <Typography sx={styles.dropText}>{isDropMode ? 'cancel' : 'drop'}</Typography>
             </Box>
           )}
-          <Typography variant="h6" color="secondary">{adventurer?.gold || 0} gold</Typography>
         </Box>
       </Box>
 
