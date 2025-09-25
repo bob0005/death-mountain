@@ -142,6 +142,14 @@ export default function Adventurer({ combatStats }: { combatStats?: CombatStats 
                   {" "}
                   {adventurer?.stat_upgrades_available! > 0 ? "LEVEL UP" : "XP"}
                 </Typography>
+                {adventurer?.stat_upgrades_available! === 0 && (
+                  <Typography variant="caption" sx={styles.missingXpText}>
+                    {calculateNextLevelXP(
+                      calculateLevel(adventurer?.xp || 1),
+                      false
+                    ) - (adventurer?.xp || 1)} XP to lvl up
+                  </Typography>
+                )}
               </>
             )}
           </Box>
@@ -226,16 +234,26 @@ const styles = {
     position: 'absolute',
     top: 0,
     left: 0,
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    color: '#fff',
-    fontWeight: 'bold',
-    textShadow: '0 0 4px #000',
-    pointerEvents: 'none',
-    fontSize: '0.75rem',
+    width: "100%",
+    height: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: "12px",
+    textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+    pointerEvents: "none",
+  },
+  missingXpText: {
+    position: "absolute",
+    bottom: "-10px",
+    right: "0px",
+    color: "#d0c98d",
+    fontSize: "0.6rem",
+    fontWeight: "normal",
+    textShadow: "1px 1px 2px rgba(0,0,0,0.8)",
+    pointerEvents: "none",
   },
   levelCircle: {
     position: 'absolute',
