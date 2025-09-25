@@ -25,9 +25,9 @@ export const FleeSimulation = ({
   beast: Beast;
 }) => {
   const { adventurerState } = useGameStore();
-
   const hasPendingChanges = useMemo(() => {
     if (!adventurer?.equipment || !adventurerState?.equipment) return false;
+
     return (
       getNewItemsEquipped(adventurer.equipment, adventurerState.equipment)
         .length > 0
@@ -194,7 +194,7 @@ export const FleeSimulation = ({
     }
 
     const hitMaxAttempts = currentStates.size > 0;
-    for (const [health, probability] of currentStates) {
+    for (const [, probability] of currentStates) {
       totalDied += probability;
     }
 
@@ -220,25 +220,6 @@ export const FleeSimulation = ({
       <Typography sx={styles.title}>⚡ Flee Simulation</Typography>
 
       <Box sx={styles.statsGrid}>
-        <Box sx={styles.statItem}>
-          <Typography sx={styles.statLabel}>
-            Flee Chance (per attempt):
-          </Typography>
-          <Typography
-            sx={{
-              ...styles.statValue,
-              color:
-                fleeChance >= 80
-                  ? "#4caf50"
-                  : fleeChance >= 50
-                  ? "#ffc107"
-                  : "#ff6b6b",
-            }}
-          >
-            {fleeChance.toFixed(1)}%
-          </Typography>
-        </Box>
-
         <Box sx={styles.statItem}>
           <Typography sx={styles.statLabel}>Overall Escape Chance:</Typography>
           <Typography
@@ -288,12 +269,6 @@ export const FleeSimulation = ({
         </Box>
       </Box>
 
-      {simulationResult.hitMaxAttempts && (
-        <Typography sx={styles.maxAttemptsWarning}>
-          ⚠️ Extended simulation (50+ attempts) - high confidence results
-        </Typography>
-      )}
-
       {hasPendingChanges && (
         <Typography sx={styles.equipmentWarning}>
           ⚡ Equipment changes trigger beast attack
@@ -314,6 +289,7 @@ const styles = {
     borderRadius: "8px",
     background: "rgba(78, 205, 196, 0.1)",
     width: "100%",
+    boxSizing: "border-box",
   },
   title: {
     color: "#4ecdc4",
@@ -333,27 +309,20 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    padding: "4px 0",
+    minHeight: "20px",
   },
   statLabel: {
     color: "#b8b8b8",
-    fontSize: "0.9rem",
+    fontSize: "0.85rem",
+    flex: "1",
+    marginRight: "8px",
   },
   statValue: {
     fontWeight: "600",
-    fontSize: "1rem",
+    fontSize: "0.9rem",
     color: "#ffb347",
-  },
-  maxAttemptsWarning: {
-    color: "#4caf50",
-    fontSize: "0.8rem",
-    textAlign: "center",
-    marginTop: "8px",
-    fontWeight: "normal",
-    backgroundColor: "rgba(76, 175, 80, 0.1)",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontStyle: "italic",
+    flex: "0 0 auto",
+    textAlign: "right",
   },
   equipmentWarning: {
     color: "#ff9800",

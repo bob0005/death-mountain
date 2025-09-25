@@ -23,9 +23,9 @@ const MAX_ATTEMPTS = 50;
 export const BattleSimulation = () => {
   const { adventurer, beast, adventurerState } = useGameStore();
 
-  // Check for pending equipment changes
-  const hasPendingChanges = useMemo(() => {
+  const hasEquipmentChange = useMemo(() => {
     if (!adventurer?.equipment || !adventurerState?.equipment) return false;
+
     return (
       getNewItemsEquipped(adventurer.equipment, adventurerState.equipment)
         .length > 0
@@ -35,8 +35,8 @@ export const BattleSimulation = () => {
   if (!adventurer || adventurer.xp === 0 || !beast) return null;
 
   const adventurerLevel = calculateLevel(adventurer.xp);
-  const beastCritChance = adventurerLevel / 100; // Convert to decimal
-  const adventurerCritChance = adventurer.stats.luck / 100; // Convert to decimal
+  const beastCritChance = adventurerLevel / 100;
+  const adventurerCritChance = Math.min(adventurer.stats.luck, 100) / 100;
 
   const { baseDamage, criticalDamage } = calculateAttackDamage(
     adventurer.equipment.weapon,
@@ -44,7 +44,6 @@ export const BattleSimulation = () => {
     beast
   );
 
-  // Group armor by damage values
   const armorGroups = new Map<string, DamageGroup>();
 
   ARMOR_SLOTS.forEach((slot) => {
@@ -67,12 +66,10 @@ export const BattleSimulation = () => {
     armorGroups.get(key)!.slots.push(slot);
   });
 
-  // Calculate probabilities for each group
   armorGroups.forEach((group) => {
-    group.probability = group.slots.length / 5; // Each slot has 1/5 chance of being hit
+    group.probability = group.slots.length / 5;
   });
 
-  // Simulate the battle process iteratively
   const simulateBattleIterative = (
     startAdventurerHealth: number,
     startBeastHealth: number,
@@ -85,7 +82,6 @@ export const BattleSimulation = () => {
     attempts: number;
     hitMaxAttempts: boolean;
   } => {
-    // Map: "adventurerHealth-beastHealth" -> probability
     let currentStates = new Map<string, number>();
     currentStates.set(`${startAdventurerHealth}-${startBeastHealth}`, 1.0);
 
@@ -102,7 +98,6 @@ export const BattleSimulation = () => {
         const advHealth = parseInt(advHealthStr);
         const beastHealth = parseInt(beastHealthStr);
 
-        // Beast is already dead - victory
         if (beastHealth <= 0) {
           totalWins += stateProbability;
           weightedDamageOnWin +=
@@ -111,33 +106,27 @@ export const BattleSimulation = () => {
           continue;
         }
 
-        // Adventurer is dead - defeat
         if (advHealth <= 0) {
           totalDeaths += stateProbability;
           continue;
         }
 
-        // Calculate adventurer damage (0 on first attempt if equipment change)
         const adventurerDamage =
           hasEquipmentChange && attempt === 1 ? 0 : baseDamage;
         const adventurerCritDamage =
           hasEquipmentChange && attempt === 1 ? 0 : criticalDamage;
 
-        // Adventurer attacks first - normal hit
         const normalHitChance = 1 - adventurerCritChance;
         const normalHitProb = stateProbability * normalHitChance;
         const beastHealthAfterNormal = beastHealth - adventurerDamage;
 
         if (beastHealthAfterNormal <= 0) {
-          // Beast dies from normal hit - immediate victory
           totalWins += normalHitProb;
           weightedDamageOnWin +=
             normalHitProb * (startAdventurerHealth - advHealth);
           weightedAttemptsOnWin += normalHitProb * attempt;
         } else {
-          // Beast survives normal hit and counter-attacks
           armorGroups.forEach((group) => {
-            // Normal beast counter-attack
             const beastNormalProb =
               normalHitProb * group.probability * (1 - beastCritChance);
             const advHealthAfterNormal = advHealth - group.normalDamage;
@@ -150,7 +139,6 @@ export const BattleSimulation = () => {
               nextStates.set(newStateKey, existing + beastNormalProb);
             }
 
-            // Critical beast counter-attack
             const beastCritProb =
               normalHitProb * group.probability * beastCritChance;
             const advHealthAfterCrit = advHealth - group.criticalDamage;
@@ -165,20 +153,16 @@ export const BattleSimulation = () => {
           });
         }
 
-        // Adventurer attacks first - critical hit
         const critHitProb = stateProbability * adventurerCritChance;
         const beastHealthAfterCrit = beastHealth - adventurerCritDamage;
 
         if (beastHealthAfterCrit <= 0) {
-          // Beast dies from crit hit - immediate victory
           totalWins += critHitProb;
           weightedDamageOnWin +=
             critHitProb * (startAdventurerHealth - advHealth);
           weightedAttemptsOnWin += critHitProb * attempt;
         } else {
-          // Beast survives crit hit and counter-attacks
           armorGroups.forEach((group) => {
-            // Normal beast counter-attack after adventurer crit
             const beastNormalProb =
               critHitProb * group.probability * (1 - beastCritChance);
             const advHealthAfterNormal = advHealth - group.normalDamage;
@@ -191,7 +175,6 @@ export const BattleSimulation = () => {
               nextStates.set(newStateKey, existing + beastNormalProb);
             }
 
-            // Critical beast counter-attack after adventurer crit
             const beastCritProb =
               critHitProb * group.probability * beastCritChance;
             const advHealthAfterCrit = advHealth - group.criticalDamage;
@@ -209,18 +192,15 @@ export const BattleSimulation = () => {
 
       currentStates = nextStates;
 
-      // Early termination conditions
       const remainingProbability = Array.from(currentStates.values()).reduce(
         (a, b) => a + b,
         0
       );
 
-      // Stop if no states remain or probability is negligible
       if (currentStates.size === 0 || remainingProbability < 0.0001) {
         break;
       }
 
-      // Stop if we've resolved most outcomes (99.99% won or died)
       if (totalWins + totalDeaths > 0.9999) {
         console.log(
           `Battle simulation terminated early at attempt ${attempt}: resolved ${(
@@ -231,7 +211,6 @@ export const BattleSimulation = () => {
         break;
       }
 
-      // For high damage scenarios, stop early if unlikely to continue much longer
       if (
         baseDamage >= beast.health / 5 &&
         attempt >= 20 &&
@@ -246,7 +225,6 @@ export const BattleSimulation = () => {
       }
     }
 
-    // Handle remaining states as deaths (hit MAX_ATTEMPTS)
     const hitMaxAttempts = currentStates.size > 0;
     for (const [, probability] of currentStates) {
       totalDeaths += probability;
@@ -258,24 +236,20 @@ export const BattleSimulation = () => {
       averageDamageOnWin: totalWins > 0 ? weightedDamageOnWin / totalWins : 0,
       averageAttemptsToWin:
         totalWins > 0 ? weightedAttemptsOnWin / totalWins : 0,
-      attempts: 0, // Not used in iterative version
+      attempts: 0,
       hitMaxAttempts,
     };
   };
 
+  const currentBeastHealth =
+    adventurer.beast_health > 0 ? adventurer.beast_health : beast.health;
+
   const simulationResult = simulateBattleIterative(
     adventurer.health,
-    beast.health,
-    hasPendingChanges
+    currentBeastHealth,
+    hasEquipmentChange
   );
   const beastPower = beast.level * (6 - beast.tier);
-
-  console.log("Simulation result:", {
-    attempts: simulationResult.attempts,
-    survivalProb: simulationResult.survivalProbability,
-    deathProb: simulationResult.deathProbability,
-    avgAttemptsToWin: simulationResult.averageAttemptsToWin,
-  });
 
   return (
     <Box sx={styles.container}>
@@ -320,6 +294,12 @@ export const BattleSimulation = () => {
           <Typography sx={styles.statLabel}>Avg Damage (Win):</Typography>
           <Typography sx={styles.statValue}>
             {simulationResult.averageDamageOnWin.toFixed(1)} HP
+            {adventurer.beast_health > 0 &&
+              adventurer.beast_health < beast.health && (
+                <Typography component="span" sx={styles.damageNote}>
+                  {` (from current state)`}
+                </Typography>
+              )}
           </Typography>
         </Box>
 
@@ -335,22 +315,17 @@ export const BattleSimulation = () => {
           <Typography sx={styles.goldValue}>
             {adventurer.equipment.ring.id === ItemId.GoldRing
               ? Math.floor(
-                  Math.floor(beastPower / 2) + (Math.floor(beastPower / 2) *
-                    0.03 *
-                    calculateLevel(adventurer.equipment.ring.xp))
+                  Math.floor(beastPower / 2) +
+                    Math.floor(beastPower / 2) *
+                      0.03 *
+                      calculateLevel(adventurer.equipment.ring.xp)
                 )
               : Math.floor(beastPower / 2)}
           </Typography>
         </Box>
       </Box>
 
-      {simulationResult.hitMaxAttempts && (
-        <Typography sx={styles.maxAttemptsWarning}>
-          ⚠️ Extended simulation (50+ attempts) - high confidence results
-        </Typography>
-      )}
-
-      {hasPendingChanges && (
+      {hasEquipmentChange && (
         <Typography sx={styles.equipmentWarning}>
           ⚡ Equipment changes cause 0 damage this turn
         </Typography>
@@ -370,6 +345,7 @@ const styles = {
     borderRadius: "8px",
     background: "rgba(255, 107, 107, 0.1)",
     width: "100%",
+    boxSizing: "border-box",
   },
   title: {
     color: "#ff6b6b",
@@ -389,38 +365,38 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     width: "100%",
-    padding: "4px 0",
+    minHeight: "20px",
   },
   statLabel: {
     color: "#b8b8b8",
-    fontSize: "0.9rem",
+    fontSize: "0.85rem",
+    flex: "1",
+    marginRight: "8px",
   },
   statValue: {
     fontWeight: "600",
-    fontSize: "1rem",
+    fontSize: "0.9rem",
     color: "#ffb347",
+    flex: "0 0 auto",
+    textAlign: "right",
   },
   goldValue: {
     fontWeight: "600",
-    fontSize: "1rem",
+    fontSize: "0.9rem",
     color: "#EDCF33",
-  },
-  maxAttemptsWarning: {
-    color: "#4caf50",
-    fontSize: "0.8rem",
-    textAlign: "center",
-    marginTop: "8px",
-    fontWeight: "normal",
-    backgroundColor: "rgba(76, 175, 80, 0.1)",
-    padding: "4px 8px",
-    borderRadius: "4px",
-    fontStyle: "italic",
+    flex: "0 0 auto",
+    textAlign: "right",
   },
   equipmentWarning: {
     color: "#ff9800",
     fontSize: "0.85rem",
     textAlign: "center",
     marginTop: "8px",
+    fontStyle: "italic",
+  },
+  damageNote: {
+    color: "#888",
+    fontSize: "0.75rem",
     fontStyle: "italic",
   },
 };
