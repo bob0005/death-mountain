@@ -6,9 +6,11 @@ import { calculateLevel } from '@/utils/game';
 import { ItemUtils, slotIcons, typeIcons, Tier } from '@/utils/loot';
 import { MarketItem, generateMarketItems, potionPrice } from '@/utils/market';
 import FilterListAltIcon from '@mui/icons-material/FilterListAlt';
+import AccessibilityIcon from '@mui/icons-material/Accessibility';
 import { Box, Button, IconButton, Modal, Slider, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import JewelryTooltip from '@/components/JewelryTooltip';
+import ArmorStatsPreview from '@/desktop/components/ArmorStatsPreview';
 
 const renderSlotToggleButton = (slot: keyof typeof slotIcons) => (
   <ToggleButton key={slot} value={slot} aria-label={slot}>
@@ -83,6 +85,7 @@ export default function MarketOverlay() {
   } = useMarketStore();
 
   const [showCart, setShowCart] = useState(false);
+  const [showArmorStats, setShowArmorStats] = useState(false);
   const isMarketDisabled = (adventurer && adventurer?.stat_upgrades_available !== 0) || false;
 
   const handleOpen = () => {
@@ -161,7 +164,7 @@ export default function MarketOverlay() {
         return b.price - a.price; // Both unaffordable, sort by price
       }
     });
-  }, [marketItemIds, adventurer?.gold]);
+  }, [marketItemIds, adventurer?.gold, adventurer?.stats?.charisma, isItemOwned]);
 
   const handleBuyItem = (item: MarketItem) => {
     addToCart(item);
@@ -174,7 +177,7 @@ export default function MarketOverlay() {
   const handleCheckout = () => {
     setInProgress(true);
 
-    let itemPurchases = cart.items.map(item => ({
+    const itemPurchases = cart.items.map(item => ({
       item_id: item.id,
       equip: adventurer?.equipment[ItemUtils.getItemSlot(item.id).toLowerCase() as keyof typeof adventurer.equipment]?.id === 0 ? true : false,
     }));
@@ -406,20 +409,39 @@ export default function MarketOverlay() {
                           </Typography>
                         </Button>
                       </Box>
-
                     </Box>
                   </Box>
                 </Box>
 
-                <IconButton
-                  onClick={() => setShowFilters(!showFilters)}
-                  sx={{
-                    ...styles.filterToggleButton,
-                    ...(showFilters ? styles.filterToggleButtonActive : {})
-                  }}
+                <Box
+                  sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
                 >
-                  <FilterListAltIcon sx={{ fontSize: 20 }} />
-                </IconButton>
+                  <IconButton
+                    onClick={() => setShowFilters(!showFilters)}
+                    sx={{
+                      ...styles.filterToggleButton,
+                      ...(showFilters ? styles.filterToggleButtonActive : {}),
+                    }}
+                    title="Toggle Filters"
+                  >
+                    <FilterListAltIcon sx={{ fontSize: 20 }} />
+                  </IconButton>
+
+                  {adventurer?.item_specials_seed !== 0 && (
+                    <IconButton
+                      onClick={() => setShowArmorStats(!showArmorStats)}
+                      sx={{
+                        ...styles.filterToggleButton,
+                        ...(showArmorStats
+                          ? styles.filterToggleButtonActive
+                          : {}),
+                      }}
+                      title="Armor Set Stats Preview"
+                    >
+                      <AccessibilityIcon sx={{ fontSize: 20 }} />
+                    </IconButton>
+                  )}
+                </Box>
               </Box>
 
               {/* Filters */}
@@ -461,6 +483,12 @@ export default function MarketOverlay() {
                         .map((tier) => renderTierToggleButton(tier as Tier))}
                     </ToggleButtonGroup>
                   </Box>
+                </Box>
+              )}
+
+              {showArmorStats && (
+                <Box sx={styles.filtersContainer}>
+                  <ArmorStatsPreview isOpen={showArmorStats} />
                 </Box>
               )}
 
