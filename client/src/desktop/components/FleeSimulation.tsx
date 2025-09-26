@@ -98,8 +98,6 @@ export const FleeSimulation = ({
     group.probability = group.slots.length / 5;
   });
 
-  console.log(armorGroups);
-
   const simulateFleeIterative = (
     startHealth: number,
     hasEquipmentChange: boolean = false
@@ -172,23 +170,10 @@ export const FleeSimulation = ({
       }
 
       if (totalEscaped + totalDied > 0.9999) {
-        console.log(
-          `Flee simulation terminated early at attempt ${attempt}: resolved ${(
-            (totalEscaped + totalDied) *
-            100
-          ).toFixed(2)}% of outcomes`
-        );
         break;
       }
 
       if (fleeChance >= 80 && attempt >= 10 && remainingProbability < 0.01) {
-        console.log(
-          `Flee simulation terminated early at attempt ${attempt}: high flee chance (${fleeChance.toFixed(
-            1
-          )}%) with low remaining probability (${(
-            remainingProbability * 100
-          ).toFixed(3)}%)`
-        );
         break;
       }
     }

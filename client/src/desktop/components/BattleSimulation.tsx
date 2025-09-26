@@ -216,12 +216,6 @@ export const BattleSimulation = () => {
       }
 
       if (totalWins + totalDeaths > 0.9999) {
-        console.log(
-          `Battle simulation terminated early at attempt ${attempt}: resolved ${(
-            (totalWins + totalDeaths) *
-            100
-          ).toFixed(2)}% of outcomes`
-        );
         break;
       }
 
@@ -230,11 +224,6 @@ export const BattleSimulation = () => {
         attempt >= 20 &&
         remainingProbability < 0.01
       ) {
-        console.log(
-          `Battle simulation terminated early at attempt ${attempt}: high damage (${baseDamage}) with low remaining probability (${(
-            remainingProbability * 100
-          ).toFixed(3)}%)`
-        );
         break;
       }
     }
