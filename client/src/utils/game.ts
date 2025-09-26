@@ -369,6 +369,12 @@ export const calculateItemLevelUp = (
   const currentLevel = calculateLevel(item.xp);
   const adventurerLevel = calculateLevel(adventurer.xp);
 
+  const MAX_ITEM_LEVEL = 20;
+  
+  if (currentLevel >= MAX_ITEM_LEVEL) {
+    return { willLevelUp: false, newLevel: currentLevel, currentLevel };
+  }
+
   const adventurerXpReward = Number(
     getXpReward(BigInt(beast.level), BigInt(beast.tier), adventurerLevel)
   );
